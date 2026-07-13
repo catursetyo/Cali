@@ -27,14 +27,10 @@ When reporting a problem, use:
 - redacted paths and usernames;
 - synthetic CSV or receipt samples.
 
-## Supported Versions
+## Supported Release
 
-Security fixes are applied to the latest major release.
-
-| Version | Supported |
-|---|---|
-| 2.x | Yes |
-| 1.x | No |
+This project is in its initial release. Security fixes are applied to the
+current release on the default branch.
 
 ## Exposed Credentials
 

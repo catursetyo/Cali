@@ -16,9 +16,9 @@ command -v python3 >/dev/null 2>&1 || {
 
 mkdir -p "$FINANCE_DIR" "$SKILL_DIR/scripts" "$SCRIPTS_DIR" "$UPGRADE_DIR"
 
-# Create a consistent SQLite backup before migration. This preserves v1 data.
+# Create a consistent SQLite backup before installation when data already exists.
 if [[ -f "$FINANCE_DIR/finance.db" ]]; then
-  BACKUP_PATH="$UPGRADE_DIR/pre-v2-$STAMP.db"
+  BACKUP_PATH="$UPGRADE_DIR/pre-install-$STAMP.db"
   python3 - "$FINANCE_DIR/finance.db" "$BACKUP_PATH" <<'PY'
 import sqlite3, sys
 source, target = sys.argv[1], sys.argv[2]
@@ -27,7 +27,7 @@ dst = sqlite3.connect(target)
 src.backup(dst)
 dst.close()
 src.close()
-print(f"Pre-upgrade database backup: {target}")
+print(f"Pre-install database backup: {target}")
 PY
 fi
 
@@ -56,7 +56,7 @@ python3 "$FINANCE_DIR/finance.py" health
 
 cat <<EOF
 
-Cali Finance v2 terpasang.
+Cali Finance terpasang.
 
 App       : $FINANCE_DIR/finance.py
 Database  : $FINANCE_DIR/finance.db

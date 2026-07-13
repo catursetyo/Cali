@@ -31,37 +31,111 @@ Sinkronisasi login bank langsung tidak disertakan; import bank menggunakan CSV.
 OCR struk bersifat heuristik dan selalu memerlukan konfirmasi. Target tabungan
 adalah bucket virtual, bukan perpindahan uang nyata.
 
-## Instalasi atau Upgrade dari v1
+## Persyaratan
 
-Upload ZIP ke Azure VM, lalu:
+- Linux dengan Python 3.11 atau 3.12.
+- Hermes Agent untuk penggunaan melalui Telegram.
+- Tesseract hanya diperlukan bila ingin memakai OCR struk.
+- `age` dan `rclone` hanya diperlukan untuk backup offsite.
 
-```bash
-unzip -o cali-finance-v2.zip
-cd cali-finance-v2
+Data runtime disimpan di `~/.hermes/finance/` secara default. Jangan menaruh
+database, struk, export transaksi, `.env`, atau credential di repository.
 
-# Hindari transaksi masuk saat migrasi database.
-hermes gateway stop
+## Mulai dari Source
 
-chmod +x install.sh
-./install.sh
+Gunakan alur ini untuk mencoba CLI langsung dari repository:
 
-hermes gateway start
-hermes gateway status
-```
+1. Unduh atau clone repository, lalu masuk ke folder proyek.
+
+   ```bash
+   git clone REPOSITORY_URL cali-finance
+   cd cali-finance
+   ```
+
+2. Pastikan versi Python didukung.
+
+   ```bash
+   python3 --version
+   ```
+
+3. Inisialisasi database lokal.
+
+   ```bash
+   python3 finance.py init
+   ```
+
+4. Periksa kesehatan database dan data awal.
+
+   ```bash
+   python3 finance.py health
+   python3 finance.py wallets
+   python3 finance.py categories --type expense
+   ```
+
+5. Tambahkan dompet yang digunakan, lalu catat transaksi pertama.
+
+   ```bash
+   python3 finance.py wallet-add \
+     --name BCA --kind bank --opening-balance 1000000
+
+   python3 finance.py add \
+     --type expense --amount 25000 --category Makan \
+     --wallet Cash --description "Makan bakso"
+   ```
+
+6. Lihat saldo dan transaksi yang tersimpan.
+
+   ```bash
+   python3 finance.py wallets
+   python3 finance.py list --limit 10
+   ```
+
+Gunakan data sintetis saat mencoba repository. Menjalankan command tanpa
+`HERMES_HOME` khusus memakai lokasi default `~/.hermes`.
+
+## Instalasi ke Hermes Agent
+
+1. Upload atau clone source ke mesin yang menjalankan Hermes, lalu masuk ke
+   folder proyek.
+
+   ```bash
+   unzip cali-finance.zip
+   cd cali-finance
+   ```
+
+2. Hentikan gateway agar tidak ada transaksi masuk selama instalasi.
+
+   ```bash
+   hermes gateway stop
+   ```
+
+3. Jalankan installer dari repository.
+
+   ```bash
+   chmod +x install.sh
+   ./install.sh
+   ```
+
+4. Hidupkan kembali gateway dan periksa statusnya.
+
+   ```bash
+   hermes gateway start
+   hermes gateway status
+   ```
+
+5. Muat ulang skill dan uji dari Telegram.
+
+   ```text
+   /reset
+   /personal-finance tampilkan saldo semua dompet
+   ```
 
 Installer:
 
 - mempertahankan `~/.hermes/finance/finance.db`;
-- membuat backup pra-upgrade di `~/.hermes/finance/upgrades/`;
-- memigrasikan tabel transaksi v1;
+- membuat backup database sebelum pemasangan bila database sudah ada;
+- menjalankan inisialisasi schema dan pemeriksaan kesehatan;
 - tidak mengubah `SOUL.md` atau personality Cali.
-
-Setelah itu kirim di Telegram:
-
-```text
-/reset
-/personal-finance tampilkan saldo semua dompet
-```
 
 ## Verifikasi
 
@@ -211,7 +285,7 @@ External ID dan fingerprint dipakai untuk mencegah import ganda.
 Pasang dependency opsional:
 
 ```bash
-cd ~/cali-finance-v2
+cd ~/cali-finance
 ./install-ocr.sh
 ```
 
@@ -344,13 +418,18 @@ Jangan commit `.env`, SAS token, atau kunci privat ke Git.
 
 ## Menjalankan Test
 
-Dari folder hasil ekstrak:
+Dari root repository:
 
 ```bash
-python3 tests/smoke_test.py
-python3 tests/migration_test.py
-python3 tests/restore_test.py
+python3 -m compileall -q cali_finance finance.py
+PYTHONPATH=. python3 tests/smoke_test.py
+PYTHONPATH=. python3 tests/migration_test.py
+PYTHONPATH=. python3 tests/restore_test.py
 ```
+
+Output akhir yang diharapkan adalah `SMOKE_OK`, `MIGRATION_OK`, dan
+`RESTORE_OK`. Seluruh test memakai `HERMES_HOME` sementara dan tidak memerlukan
+internet atau credential.
 
 ## File Penting
 

@@ -1,8 +1,8 @@
 # Changelog
 
-## 2.0.0
+## Initial release
 
-- Preserves and migrates the v1 SQLite database.
+- Adds a local SQLite ledger with safe schema initialization.
 - Adds duplicate detection and explicit override.
 - Adds reconciliation preview and audited adjustments.
 - Adds category/overall budgets and threshold alerts.

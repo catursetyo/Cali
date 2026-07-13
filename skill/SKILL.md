@@ -1,7 +1,7 @@
 ---
 name: personal-finance
 description: Catat, audit, dan rangkum keuangan pribadi dengan dompet, budget, tagihan, utang, piutang, target tabungan, CSV, dan struk.
-version: 2.0.0
+version: 1.0.0
 author: Cali Finance Project
 license: MIT
 platforms: [linux]
