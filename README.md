@@ -1,6 +1,6 @@
 # Cali Finance for Hermes Agent
 
-Cali Finance v2 adalah personal finance ledger lokal untuk Hermes Agent. Model
+Cali adalah personal finance ledger lokal untuk Hermes Agent. Model
 AI memahami bahasa natural dan memilih command, sedangkan SQLite dan Python
 menangani validasi, saldo, laporan, duplikat, serta histori.
 

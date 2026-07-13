@@ -1,0 +1,88 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+env/
+build/
+dist/
+*.egg-info/
+
+# Hermes runtime
+.hermes/
+state.db
+
+# Financial data
+finance.db
+finance.db-*
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+
+backups/
+upgrades/
+receipts/
+dashboard/
+imports/
+exports/
+private/
+data/
+
+# User financial files
+*.csv
+*.xlsx
+*.xls
+*.pdf
+*.jpg
+*.jpeg
+*.png
+*.webp
+
+# Allow sanitized examples
+!examples/
+!examples/*.csv
+!examples/*.json
+!docs/
+!docs/*.png
+
+# Secrets and credentials
+.env
+.env.*
+!.env.example
+
+*.pem
+*.key
+*.p12
+*.pfx
+*.agekey
+*.secret
+
+rclone.conf
+credentials.json
+secrets/
+tokens/
+
+# Release artifacts
+*.zip
+*.tar.gz
+*.sha256
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+*.swp
+*~
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

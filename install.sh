@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HERMES_BASE="${HERMES_HOME:-$HOME/.hermes}"
+FINANCE_DIR="$HERMES_BASE/finance"
+SKILL_DIR="$HERMES_BASE/skills/productivity/personal-finance"
+SCRIPTS_DIR="$HERMES_BASE/scripts"
+UPGRADE_DIR="$FINANCE_DIR/upgrades"
+STAMP="$(date +%Y%m%d-%H%M%S)"
+
+command -v python3 >/dev/null 2>&1 || {
+  echo "python3 tidak ditemukan." >&2
+  exit 1
+}
+
+mkdir -p "$FINANCE_DIR" "$SKILL_DIR/scripts" "$SCRIPTS_DIR" "$UPGRADE_DIR"
+
+# Create a consistent SQLite backup before migration. This preserves v1 data.
+if [[ -f "$FINANCE_DIR/finance.db" ]]; then
+  BACKUP_PATH="$UPGRADE_DIR/pre-v2-$STAMP.db"
+  python3 - "$FINANCE_DIR/finance.db" "$BACKUP_PATH" <<'PY'
+import sqlite3, sys
+source, target = sys.argv[1], sys.argv[2]
+src = sqlite3.connect(source)
+dst = sqlite3.connect(target)
+src.backup(dst)
+dst.close()
+src.close()
+print(f"Pre-upgrade database backup: {target}")
+PY
+fi
+
+# Preserve the previous application files without touching the database.
+if [[ -f "$FINANCE_DIR/finance.py" ]]; then
+  mkdir -p "$UPGRADE_DIR/app-$STAMP"
+  cp -a "$FINANCE_DIR/finance.py" "$UPGRADE_DIR/app-$STAMP/" || true
+  [[ -d "$FINANCE_DIR/cali_finance" ]] && cp -a "$FINANCE_DIR/cali_finance" "$UPGRADE_DIR/app-$STAMP/" || true
+fi
+
+rm -rf "$FINANCE_DIR/cali_finance.new"
+cp -a "$SOURCE_DIR/cali_finance" "$FINANCE_DIR/cali_finance.new"
+rm -rf "$FINANCE_DIR/cali_finance"
+mv "$FINANCE_DIR/cali_finance.new" "$FINANCE_DIR/cali_finance"
+install -m 700 "$SOURCE_DIR/finance.py" "$FINANCE_DIR/finance.py"
+
+install -m 600 "$SOURCE_DIR/skill/SKILL.md" "$SKILL_DIR/SKILL.md"
+install -m 700 "$SOURCE_DIR/skill/scripts/finance.sh" "$SKILL_DIR/scripts/finance.sh"
+
+for script in "$SOURCE_DIR"/scripts/*.sh; do
+  install -m 700 "$script" "$SCRIPTS_DIR/$(basename "$script")"
+done
+
+python3 "$FINANCE_DIR/finance.py" init
+python3 "$FINANCE_DIR/finance.py" health
+
+cat <<EOF
+
+Cali Finance v2 terpasang.
+
+App       : $FINANCE_DIR/finance.py
+Database  : $FINANCE_DIR/finance.db
+Skill     : $SKILL_DIR/SKILL.md
+Cron files: $SCRIPTS_DIR/finance-*.sh
+
+Langkah berikutnya:
+  1. Restart gateway: hermes gateway restart
+  2. Di Telegram kirim: /reset
+  3. Tes: /personal-finance tampilkan saldo semua dompet
+
+OCR opsional:
+  cd "$SOURCE_DIR" && ./install-ocr.sh
+
+Installer tidak mengubah SOUL.md atau personality Cali.
+EOF
