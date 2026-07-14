@@ -2,7 +2,8 @@
 set -euo pipefail
 HERMES_BASE="${HERMES_HOME:-$HOME/.hermes}"
 FINANCE_DIR="$HERMES_BASE/finance"
-SKILL_DIR="$HERMES_BASE/skills/productivity/personal-finance"
+SKILL_DIR="$HERMES_BASE/skills/productivity/cali"
+LEGACY_SKILL_DIR="$HERMES_BASE/skills/productivity/personal-finance"
 SCRIPTS_DIR="$HERMES_BASE/scripts"
 
 cat <<EOF
@@ -16,7 +17,7 @@ read -r -p "Continue? Type YES: " confirm
 
 rm -rf "$FINANCE_DIR/cali_finance"
 rm -f "$FINANCE_DIR/finance.py"
-rm -rf "$SKILL_DIR"
+rm -rf "$SKILL_DIR" "$LEGACY_SKILL_DIR"
 rm -f "$SCRIPTS_DIR"/finance-weekly-report.sh \
       "$SCRIPTS_DIR"/finance-monthly-report.sh \
       "$SCRIPTS_DIR"/finance-daily-alerts.sh \

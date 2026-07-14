@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Renames the Hermes skill slash command from `/personal-finance` to `/cali`
+  and removes the legacy installed skill during upgrades.
 - Rejects symbolic links, hard links, and other special archive entries during
   restore to prevent extraction outside the temporary directory.
 - Changes documentation, Hermes instructions, dashboard labels, installer

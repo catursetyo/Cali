@@ -4,7 +4,8 @@ set -euo pipefail
 SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HERMES_BASE="${HERMES_HOME:-$HOME/.hermes}"
 FINANCE_DIR="$HERMES_BASE/finance"
-SKILL_DIR="$HERMES_BASE/skills/productivity/personal-finance"
+SKILL_DIR="$HERMES_BASE/skills/productivity/cali"
+LEGACY_SKILL_DIR="$HERMES_BASE/skills/productivity/personal-finance"
 SCRIPTS_DIR="$HERMES_BASE/scripts"
 UPGRADE_DIR="$FINANCE_DIR/upgrades"
 STAMP="$(date +%Y%m%d-%H%M%S)"
@@ -46,6 +47,7 @@ install -m 700 "$SOURCE_DIR/finance.py" "$FINANCE_DIR/finance.py"
 
 install -m 600 "$SOURCE_DIR/skill/SKILL.md" "$SKILL_DIR/SKILL.md"
 install -m 700 "$SOURCE_DIR/skill/scripts/finance.sh" "$SKILL_DIR/scripts/finance.sh"
+rm -rf "$LEGACY_SKILL_DIR"
 
 for script in "$SOURCE_DIR"/scripts/*.sh; do
   install -m 700 "$script" "$SCRIPTS_DIR/$(basename "$script")"
@@ -66,7 +68,7 @@ Cron files: $SCRIPTS_DIR/finance-*.sh
 Next steps:
   1. Restart gateway: hermes gateway restart
   2. Send in Telegram: /reset
-  3. Test: /personal-finance show all wallet balances
+  3. Test: /cali show all wallet balances
 
 Optional OCR:
   cd "$SOURCE_DIR" && ./install-ocr.sh

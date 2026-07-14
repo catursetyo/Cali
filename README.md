@@ -124,7 +124,7 @@ Use synthetic data while testing the repository. Commands without a custom
 
    ```text
    /reset
-   /personal-finance show all wallet balances
+   /cali show all wallet balances
    ```
 
 The installer preserves `~/.hermes/finance/finance.db`, creates a pre-install
@@ -415,7 +415,7 @@ test uses a temporary `HERMES_HOME` and needs no internet or credentials.
 ~/.hermes/finance/backups/
 ~/.hermes/finance/receipts/
 ~/.hermes/finance/dashboard/index.html
-~/.hermes/skills/productivity/personal-finance/SKILL.md
+~/.hermes/skills/productivity/cali/SKILL.md
 ~/.hermes/scripts/finance-*.sh
 ```
 
