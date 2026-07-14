@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Rejects symbolic links, hard links, and other special archive entries during
+  restore to prevent extraction outside the temporary directory.
 - Changes documentation, Hermes instructions, dashboard labels, installer
   output, reports, alerts, and CLI errors to English.
 - Uses English default category names for new databases while preserving

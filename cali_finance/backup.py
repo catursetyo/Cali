@@ -20,6 +20,8 @@ from .db import connect
 def _safe_tar_members(archive: tarfile.TarFile, destination: Path):
     root = destination.resolve()
     for member in archive.getmembers():
+        if not (member.isfile() or member.isdir()):
+            raise ValueError(f"Unsupported backup archive member type: {member.name}")
         target = (destination / member.name).resolve()
         if root != target and root not in target.parents:
             raise ValueError(f"Unsafe backup archive member: {member.name}")
