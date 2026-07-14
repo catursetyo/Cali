@@ -1,70 +1,68 @@
 # Cali Finance for Hermes Agent
 
-Cali adalah personal finance ledger lokal untuk Hermes Agent. Model
-AI memahami bahasa natural dan memilih command, sedangkan SQLite dan Python
-menangani validasi, saldo, laporan, duplikat, serta histori.
+Cali Finance is a local personal finance ledger for Hermes Agent. The AI model
+understands natural language and selects commands, while Python and SQLite
+handle validation, balances, reports, duplicate detection, and history.
 
-## Fitur
+## Features
 
-- Pemasukan, pengeluaran, dan transfer multi-dompet.
-- Kategori otomatis dengan validasi.
-- Deteksi transaksi duplikat dan override setelah konfirmasi.
-- Rekonsiliasi saldo dengan audit trail penyesuaian.
-- Budget mingguan/bulanan dan peringatan 70/90/100%.
-- Tagihan belum dibayar dan pembayaran parsial.
-- Utang pengguna (`payable`) dan piutang (`receivable`).
-- Tagihan berulang yang menghasilkan kewajiban, bukan transaksi fiktif.
-- Laporan mingguan/bulanan dan perbandingan periode sebelumnya.
-- Estimasi aman dibelanjakan.
-- Target tabungan virtual.
-- Pencarian transaksi dengan filter tervalidasi.
-- Import CSV melalui preview, review, dan commit.
-- Preview struk dengan OCR Tesseract opsional.
-- Dashboard HTML statis.
-- Backup lokal dan backup offsite terenkripsi melalui `age` + `rclone`.
-- Alert proaktif untuk budget, jatuh tempo, saldo negatif, backup, dan kesehatan DB.
+- Multi-wallet income, expenses, and transfers.
+- Automatic category inference with validation.
+- Duplicate transaction detection with explicit overrides.
+- Balance reconciliation with an audited adjustment trail.
+- Weekly/monthly budgets with 70/90/100% warnings.
+- Unpaid bills and partial payments.
+- Payable debts and receivables.
+- Recurring bills that create obligations, not fictional transactions.
+- Weekly/monthly reports with previous-period comparisons.
+- Safe-to-spend estimates.
+- Virtual savings goals.
+- Validated transaction search.
+- Staged CSV import: preview, review, then commit.
+- Receipt preview with optional local Tesseract OCR.
+- Static HTML dashboard.
+- Local backups and encrypted offsite backups through `age` and `rclone`.
+- Alerts for budgets, due dates, negative balances, backups, and database health.
 
-## Batasan yang Perlu Dipahami
+## Limitations
 
-Ini bukan sistem akuntansi bisnis, aplikasi pajak, atau penasihat investasi.
-Sinkronisasi login bank langsung tidak disertakan; import bank menggunakan CSV.
-OCR struk bersifat heuristik dan selalu memerlukan konfirmasi. Target tabungan
-adalah bucket virtual, bukan perpindahan uang nyata.
+This is not business accounting software, a tax application, or investment
+advice. Direct bank-login synchronization is not included; bank data is
+imported from CSV. Receipt OCR is heuristic and always requires confirmation.
+Savings goals are virtual buckets, not real money transfers.
 
-## Persyaratan
+## Requirements
 
-- Linux dengan Python 3.11 atau 3.12.
-- Hermes Agent untuk penggunaan melalui Telegram.
-- Tesseract hanya diperlukan bila ingin memakai OCR struk.
-- `age` dan `rclone` hanya diperlukan untuk backup offsite.
+- Linux with Python 3.11 or 3.12.
+- Hermes Agent for Telegram use.
+- Tesseract only for receipt OCR.
+- `age` and `rclone` only for offsite backups.
 
-Data runtime disimpan di `~/.hermes/finance/` secara default. Jangan menaruh
-database, struk, export transaksi, `.env`, atau credential di repository.
+Runtime data is stored in `~/.hermes/finance/` by default. Never put databases,
+receipts, transaction exports, `.env` files, or credentials in this repository.
 
-## Mulai dari Source
+## Run from Source
 
-Gunakan alur ini untuk mencoba CLI langsung dari repository:
-
-1. Unduh atau clone repository, lalu masuk ke folder proyek.
+1. Clone the repository and enter the project directory.
 
    ```bash
    git clone REPOSITORY_URL cali-finance
    cd cali-finance
    ```
 
-2. Pastikan versi Python didukung.
+2. Check the Python version.
 
    ```bash
    python3 --version
    ```
 
-3. Inisialisasi database lokal.
+3. Initialize the local database.
 
    ```bash
    python3 finance.py init
    ```
 
-4. Periksa kesehatan database dan data awal.
+4. Check database health and initial data.
 
    ```bash
    python3 finance.py health
@@ -72,72 +70,72 @@ Gunakan alur ini untuk mencoba CLI langsung dari repository:
    python3 finance.py categories --type expense
    ```
 
-5. Tambahkan dompet yang digunakan, lalu catat transaksi pertama.
+5. Add a wallet and record the first transaction.
 
    ```bash
    python3 finance.py wallet-add \
      --name BCA --kind bank --opening-balance 1000000
 
    python3 finance.py add \
-     --type expense --amount 25000 --category Makan \
-     --wallet Cash --description "Makan bakso"
+     --type expense --amount 25000 --category Food \
+     --wallet Cash --description "Meatball soup"
    ```
 
-6. Lihat saldo dan transaksi yang tersimpan.
+6. Review balances and transactions.
 
    ```bash
    python3 finance.py wallets
    python3 finance.py list --limit 10
    ```
 
-Gunakan data sintetis saat mencoba repository. Menjalankan command tanpa
-`HERMES_HOME` khusus memakai lokasi default `~/.hermes`.
+Use synthetic data while testing the repository. Commands without a custom
+`HERMES_HOME` use the default `~/.hermes` location.
 
-## Instalasi ke Hermes Agent
+## Install for Hermes Agent
 
-1. Upload atau clone source ke mesin yang menjalankan Hermes, lalu masuk ke
-   folder proyek.
+1. Upload or clone the source on the Hermes host and enter the project folder.
 
    ```bash
    unzip cali-finance.zip
    cd cali-finance
    ```
 
-2. Hentikan gateway agar tidak ada transaksi masuk selama instalasi.
+2. Stop the gateway so no transaction arrives during installation.
 
    ```bash
    hermes gateway stop
    ```
 
-3. Jalankan installer dari repository.
+3. Run the installer.
 
    ```bash
    chmod +x install.sh
    ./install.sh
    ```
 
-4. Hidupkan kembali gateway dan periksa statusnya.
+4. Restart the gateway and check its status.
 
    ```bash
    hermes gateway start
    hermes gateway status
    ```
 
-5. Muat ulang skill dan uji dari Telegram.
+5. Reload the skill and test it from Telegram.
 
    ```text
    /reset
-   /personal-finance tampilkan saldo semua dompet
+   /personal-finance show all wallet balances
    ```
 
-Installer:
+The installer preserves `~/.hermes/finance/finance.db`, creates a pre-install
+database backup when one already exists, initializes/migrates the schema, runs
+a health check, and does not change `SOUL.md` or Cali's personality.
 
-- mempertahankan `~/.hermes/finance/finance.db`;
-- membuat backup database sebelum pemasangan bila database sudah ada;
-- menjalankan inisialisasi schema dan pemeriksaan kesehatan;
-- tidak mengubah `SOUL.md` atau personality Cali.
+For upgrades, repeat the same stop/install/start flow. Existing Indonesian
+default category labels are preserved to avoid rewriting financial data; the
+new English names are added as aliases, so English commands continue to work.
 
-## Verifikasi
+## Verify the Installation
 
 ```bash
 python3 ~/.hermes/finance/finance.py health
@@ -146,81 +144,80 @@ python3 ~/.hermes/finance/finance.py categories --type expense
 python3 ~/.hermes/finance/finance.py backup
 ```
 
-## Contoh Penggunaan
+## Natural-Language Examples
 
-### Transaksi
-
-```text
-Catat makan ayam geprek 25 ribu dari GoPay.
-Dapat uang freelance 750 ribu masuk BCA.
-Top up GoPay 100 ribu dari BCA.
-Cari semua pembelian kopi bulan ini.
-```
-
-### Budget
+### Transactions
 
 ```text
-Batasi pengeluaran makan bulan ini menjadi 800 ribu.
-Bagaimana status semua budgetku?
+Record a Rp25,000 chicken meal paid from GoPay.
+I received Rp750,000 in freelance income in BCA.
+Transfer Rp100,000 from BCA to GoPay.
+Find all coffee purchases this month.
 ```
 
-### Tagihan, utang, dan piutang
+### Budgets
 
 ```text
-Catat tagihan internet 275 ribu jatuh tempo 15 Juli dari BCA.
-Tagihan internet tadi sudah kubayar lunas dari BCA.
-Aku berutang 500 ribu ke Umar, jatuh tempo 1 Agustus.
-Zaki berutang 200 ribu kepadaku dan uangnya keluar dari Cash.
-Aku baru menerima cicilan Zaki 50 ribu ke Cash.
+Limit this month's food spending to Rp800,000.
+Show the status of all my budgets.
 ```
 
-### Rekonsiliasi
+### Bills, debts, and receivables
 
 ```text
-Saldo GoPay asliku 142.500. Cocokkan dengan catatanmu.
+Record a Rp275,000 internet bill due July 15 from BCA.
+I just paid that internet bill in full from BCA.
+I owe Umar Rp500,000, due August 1.
+Zaki owes me Rp200,000 and the money came from Cash.
+I received a Rp50,000 installment from Zaki into Cash.
 ```
 
-Cali akan menampilkan selisih terlebih dahulu. Penyesuaian tidak dibuat tanpa
-konfirmasi.
-
-### Laporan
+### Reconciliation
 
 ```text
-Rangkum keuanganku minggu ini.
-Bandingkan pengeluaran bulan ini dengan bulan sebelumnya.
-Berapa uang yang aman kubelanjakan sampai akhir bulan?
+My actual GoPay balance is Rp142,500. Reconcile it with the ledger.
 ```
 
-## Command CLI Penting
+Cali shows the difference first. No adjustment is created without confirmation.
+
+### Reports
+
+```text
+Summarize my finances this week.
+Compare this month's expenses with last month.
+How much is safe to spend through the end of the month?
+```
+
+## Important CLI Commands
 
 ```bash
 APP="python3 ~/.hermes/finance/finance.py"
 
-$APP add --type expense --amount 25000 --category Makan \
-  --wallet Cash --description "Makan bakso"
+$APP add --type expense --amount 25000 --category Food \
+  --wallet Cash --description "Meatball soup"
 
 $APP transfer --amount 100000 --from-wallet BCA --to-wallet GoPay
 
 $APP reconcile --wallet GoPay --actual-balance 142500
-$APP reconcile-adjust --check-id 1 --reason "Transaksi hilang" --confirm-adjust YES
+$APP reconcile-adjust --check-id 1 --reason "Missing transaction" --confirm-adjust YES
 
-$APP budget-set --category Makan --limit 800000 --period month
+$APP budget-set --category Food --limit 800000 --period month
 $APP budgets
 
-$APP bill-add --name "Internet Juli" --amount 275000 \
-  --due-date 2026-07-15 --category Tagihan --wallet BCA
+$APP bill-add --name "July internet" --amount 275000 \
+  --due-date 2026-07-15 --category Bills --wallet BCA
 
-$APP debt-add --direction payable --name "Utang Umar" \
+$APP debt-add --direction payable --name "Debt to Umar" \
   --amount 500000 --counterparty Umar --due-date 2026-08-01
 
-$APP debt-add --direction receivable --name "Pinjaman Zaki" \
+$APP debt-add --direction receivable --name "Loan to Zaki" \
   --amount 200000 --counterparty Zaki --cash-wallet Cash
 
 $APP obligations
 $APP obligation-pay --id 1 --amount 100000 --wallet BCA
 
 $APP recurring-add --name Netflix --amount 65000 \
-  --category Langganan --next-due-date 2026-08-07 \
+  --category Subscriptions --next-due-date 2026-08-07 \
   --frequency monthly --wallet GoPay
 
 $APP goal-add --name Laptop --target 10000000 --target-date 2027-01-01
@@ -231,7 +228,7 @@ $APP report --period month
 $APP safe-to-spend
 ```
 
-## Konfigurasi Safe-to-Spend
+## Safe-to-Spend Configuration
 
 ```bash
 APP="python3 ~/.hermes/finance/finance.py"
@@ -241,73 +238,74 @@ $APP config-set --key monthly_savings_target --value 500000
 $APP config
 ```
 
-Perhitungan mengurangi saldo likuid dengan tagihan/utang yang jatuh tempo,
-cadangan minimum, target tabungan tersisa, dan alokasi goal virtual. Hasilnya
-selalu merupakan perkiraan.
+The estimate subtracts bills/debts due, the minimum reserve, the remaining
+monthly savings target, and virtual goal allocations from liquid balances. It
+is always an estimate.
 
-## Import CSV
+## CSV Import
 
-Format CSV bank berbeda-beda. Sistem mencoba mendeteksi header umum seperti
-`tanggal`, `keterangan`, `debit`, `credit`, `amount`, dan `reference`.
+Bank CSV formats vary. The importer detects common headers such as `date`,
+`description`, `debit`, `credit`, `amount`, and `reference`. Legacy Indonesian
+headers remain supported.
 
 ```bash
 APP="python3 ~/.hermes/finance/finance.py"
 
 $APP import-preview \
-  --file ~/mutasi-bca.csv \
+  --file ~/bank-statement.csv \
   --wallet BCA \
   --source "bca-2026-07" \
   --date-format '%d/%m/%Y'
 ```
 
-Lihat baris:
+Review rows:
 
 ```bash
 $APP import-rows --batch-id 1
 ```
 
-Perbaiki kategori yang belum jelas:
+Resolve an unclear category:
 
 ```bash
-$APP import-row-set --row-id 3 --type expense --category Belanja
+$APP import-row-set --row-id 3 --type expense --category Shopping
 ```
 
-Commit setelah review:
+Commit only after review:
 
 ```bash
 $APP import-commit --batch-id 1
 ```
 
-External ID dan fingerprint dipakai untuk mencegah import ganda.
+External IDs and fingerprints prevent duplicate imports.
 
-## OCR Struk
+## Receipt OCR
 
-Pasang dependency opsional:
+Install the optional dependency:
 
 ```bash
 cd ~/cali-finance
 ./install-ocr.sh
 ```
 
-Preview:
+Preview a receipt:
 
 ```bash
 APP="python3 ~/.hermes/finance/finance.py"
 $APP receipt-scan --file ~/receipt.jpg --wallet GoPay --ocr
 ```
 
-Konfirmasi hanya setelah nominal, tanggal, kategori, dan dompet diperiksa:
+Confirm only after checking the amount, date, category, and wallet:
 
 ```bash
-$APP receipt-confirm --id 1 --wallet GoPay --category Makan \
-  --description "Belanja dari struk" --amount 74500 --date 2026-07-14
+$APP receipt-confirm --id 1 --wallet GoPay --category Food \
+  --description "Purchase from receipt" --amount 74500 --date 2026-07-14
 ```
 
-Hermes Telegram mendukung image/file attachment, tetapi skill tetap memerlukan
-path file yang tersedia di server. Bila attachment tidak bisa diakses atau OCR
-buram, masukkan data secara manual.
+Hermes Telegram supports image/file attachments, but the skill still needs a
+server-accessible path. Enter the data manually when the attachment is
+unavailable or OCR is unclear.
 
-## Dashboard Lokal
+## Local Dashboard
 
 ```bash
 python3 ~/.hermes/finance/finance.py dashboard-generate
@@ -315,88 +313,66 @@ cd ~/.hermes/finance/dashboard
 python3 -m http.server 8765 --bind 127.0.0.1
 ```
 
-Dari laptop, gunakan SSH tunnel:
+Create an SSH tunnel from your laptop:
 
 ```bash
 ssh -L 8765:127.0.0.1:8765 -i ~/Downloads/azure-key.pem azureuser@PUBLIC_IP
 ```
 
-Lalu buka `http://127.0.0.1:8765`. Jangan membuka port 8765 ke internet publik.
+Open `http://127.0.0.1:8765`. Never expose port 8765 to the public internet.
 
-## Cron Hermes
+## Hermes Cron
 
-Script-only cron tidak memakai token model. Script wajib berada di
-`~/.hermes/scripts/`, dan installer sudah menyalinnya ke sana.
-
-### Alert harian pukul 08.00
+Script-only cron jobs do not use model tokens. The installer copies the helper
+scripts to `~/.hermes/scripts/`.
 
 ```bash
-hermes cron create "0 8 * * *" \
-  --no-agent \
-  --script finance-daily-alerts.sh \
-  --deliver telegram \
+# Daily alerts at 08:00
+hermes cron create "0 8 * * *" --no-agent \
+  --script finance-daily-alerts.sh --deliver telegram \
   --name "Cali finance alerts"
+
+# Weekly report on Sunday at 20:00
+hermes cron create "0 20 * * 0" --no-agent \
+  --script finance-weekly-report.sh --deliver telegram \
+  --name "Weekly finance report"
+
+# Previous-month report on day 1 at 08:10
+hermes cron create "10 8 1 * *" --no-agent \
+  --script finance-monthly-report.sh --deliver telegram \
+  --name "Monthly finance report"
+
+# Local backup every night
+hermes cron create "30 2 * * *" --no-agent \
+  --script finance-backup.sh --deliver local \
+  --name "Finance database backup"
+
+# Dashboard refresh
+hermes cron create "15 7 * * *" --no-agent \
+  --script finance-dashboard-refresh.sh --deliver local \
+  --name "Finance dashboard refresh"
 ```
 
-### Laporan Minggu pukul 20.00
-
-```bash
-hermes cron create "0 20 * * 0" \
-  --no-agent \
-  --script finance-weekly-report.sh \
-  --deliver telegram \
-  --name "Laporan keuangan mingguan"
-```
-
-### Laporan bulan sebelumnya pada tanggal 1 pukul 08.10
-
-```bash
-hermes cron create "10 8 1 * *" \
-  --no-agent \
-  --script finance-monthly-report.sh \
-  --deliver telegram \
-  --name "Laporan keuangan bulanan"
-```
-
-### Backup lokal setiap malam
-
-```bash
-hermes cron create "30 2 * * *" \
-  --no-agent \
-  --script finance-backup.sh \
-  --deliver local \
-  --name "Backup database keuangan"
-```
-
-### Refresh dashboard
-
-```bash
-hermes cron create "15 7 * * *" \
-  --no-agent \
-  --script finance-dashboard-refresh.sh \
-  --deliver local \
-  --name "Refresh dashboard keuangan"
-```
-
-Pastikan timezone VM:
+Set the VM timezone:
 
 ```bash
 sudo timedatectl set-timezone Asia/Jakarta
 ```
 
-## Backup Offsite
+## Offsite Backup
 
-Setiap backup lokal berupa arsip `.tar.gz` yang memuat snapshot SQLite dan file
-struk. Dashboard tidak disimpan karena dapat dibuat ulang. Backup di VM yang sama
-belum cukup. Dukungan offsite memakai `rclone` dan, secara default, mewajibkan
-enkripsi `age`.
+Each local backup is a `.tar.gz` archive containing a SQLite snapshot and
+receipt files. The dashboard is omitted because it can be regenerated. A backup
+on the same VM is insufficient. Offsite support uses `rclone` and requires
+`age` encryption by default.
 
 ```bash
 sudo apt install -y rclone age
 rclone config
 ```
 
-Atur remote, idealnya `crypt` di atas Azure Blob atau storage lain:
+Configure a remote, ideally an `rclone crypt` remote backed by Azure Blob or
+another storage provider:
 
 ```bash
 cat >> ~/.hermes/.env <<'EOF'
@@ -405,7 +381,7 @@ FINANCE_BACKUP_AGE_RECIPIENT=age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 EOF
 ```
 
-Lalu tes:
+Test it:
 
 ```bash
 set -a
@@ -414,24 +390,23 @@ set +a
 python3 ~/.hermes/finance/finance.py backup --offsite
 ```
 
-Jangan commit `.env`, SAS token, atau kunci privat ke Git.
+Never commit `.env`, SAS tokens, or private keys.
 
-## Menjalankan Test
+## Tests
 
-Dari root repository:
+Run from the repository root:
 
 ```bash
 python3 -m compileall -q cali_finance finance.py
-PYTHONPATH=. python3 tests/smoke_test.py
-PYTHONPATH=. python3 tests/migration_test.py
-PYTHONPATH=. python3 tests/restore_test.py
+python3 tests/smoke_test.py
+python3 tests/migration_test.py
+python3 tests/restore_test.py
 ```
 
-Output akhir yang diharapkan adalah `SMOKE_OK`, `MIGRATION_OK`, dan
-`RESTORE_OK`. Seluruh test memakai `HERMES_HOME` sementara dan tidak memerlukan
-internet atau credential.
+Expected final markers are `SMOKE_OK`, `MIGRATION_OK`, and `RESTORE_OK`. Every
+test uses a temporary `HERMES_HOME` and needs no internet or credentials.
 
-## File Penting
+## Important Runtime Files
 
 ```text
 ~/.hermes/finance/finance.py
@@ -444,9 +419,9 @@ internet atau credential.
 ~/.hermes/scripts/finance-*.sh
 ```
 
-## Restore Backup
+## Restore a Backup
 
-Restore bersifat destruktif. Hentikan gateway agar tidak ada transaksi yang masuk:
+Restore is destructive. Stop the gateway first so no transaction arrives:
 
 ```bash
 hermes gateway stop
@@ -456,5 +431,5 @@ python3 ~/.hermes/finance/finance.py restore \
 hermes gateway start
 ```
 
-Command restore membuat safety backup dari database saat ini, memeriksa integritas
-database dalam arsip, lalu memulihkan database dan file struk.
+The restore command creates a safety backup of the current database, validates
+the archived database, then restores the database and receipt files.

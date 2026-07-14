@@ -17,7 +17,7 @@ from .reports import report_data, safe_to_spend
 
 def _bar_rows(items: list[dict[str, Any]], value_key: str = "amount") -> str:
     if not items:
-        return '<p class="muted">Belum ada data.</p>'
+        return '<p class="muted">No data yet.</p>'
     maximum = max(int(item.get(value_key, 0)) for item in items) or 1
     rows = []
     for item in items:
@@ -55,32 +55,32 @@ def dashboard_generate(
         f'<strong>{html.escape(item["balance_formatted"])}</strong>'
         f'<small>{html.escape(item["kind"])}</small></div>'
         for item in wallets
-    ) or '<p class="muted">Belum ada dompet.</p>'
+    ) or '<p class="muted">No wallets yet.</p>'
 
     obligation_rows = "".join(
         f'<tr><td>#{item["id"]}</td><td>{html.escape(item["name"])}</td>'
         f'<td>{html.escape(item["kind"])}</td><td>{html.escape(item["remaining_amount_formatted"])}</td>'
         f'<td>{html.escape(item["due_date"] or "-")}</td><td><span class="status {html.escape(item["status"])}">{html.escape(item["status"])}</span></td></tr>'
         for item in open_obligations[:20]
-    ) or '<tr><td colspan="6" class="muted">Tidak ada tagihan/utang terbuka.</td></tr>'
+    ) or '<tr><td colspan="6" class="muted">No open bills or debts.</td></tr>'
 
     goal_rows = "".join(
         f'<div class="goal"><div><strong>{html.escape(item["name"])}</strong>'
         f'<span>{html.escape(item["current_formatted"])} / {html.escape(item["target_formatted"])}</span></div>'
         f'<div class="progress"><i style="width:{min(100, item["progress_percent"])}%"></i></div></div>'
         for item in goals
-    ) or '<p class="muted">Belum ada target tabungan.</p>'
+    ) or '<p class="muted">No savings goals yet.</p>'
 
     top_rows = "".join(
         f'<tr><td>{html.escape(item["occurred_at"][:10])}</td><td>{html.escape(item["description"])}</td>'
         f'<td>{html.escape(item["category"] or "-")}</td><td>{html.escape(item["wallet"])}</td>'
         f'<td class="num">{html.escape(item["amount_formatted"])}</td></tr>'
         for item in current["top_expenses"]
-    ) or '<tr><td colspan="5" class="muted">Belum ada transaksi.</td></tr>'
+    ) or '<tr><td colspan="5" class="muted">No transactions yet.</td></tr>'
 
     payload = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
     document = f'''<!doctype html>
-<html lang="id">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -101,28 +101,28 @@ footer {{ color:var(--muted);font-size:12px;margin-top:20px; }} @media(max-width
 </head>
 <body><main>
 <p class="muted">Cali Finance • {html.escape(data["label"])}</p>
-<h1>Keuanganmu, tanpa drama yang ngga perlu.</h1>
-<p class="muted">Dibuat {html.escape(generated)}. Dashboard ini statis dan hanya membaca database lokal.</p>
+<h1>Your finances, without the unnecessary drama.</h1>
+<p class="muted">Generated {html.escape(generated)}. This static dashboard reads only the local database.</p>
 <section class="grid metrics">
-<div class="metric"><span>Pengeluaran</span><strong>{rupiah(current["expense_total"])}</strong></div>
-<div class="metric"><span>Pemasukan</span><strong>{rupiah(current["income_total"])}</strong></div>
-<div class="metric"><span>Arus kas operasional</span><strong>{rupiah(current["operating_net"])}</strong></div>
-<div class="metric"><span>Aman dibelanjakan (estimasi)</span><strong>{html.escape(safe["safe_to_spend_formatted"])}</strong></div>
+<div class="metric"><span>Expenses</span><strong>{rupiah(current["expense_total"])}</strong></div>
+<div class="metric"><span>Income</span><strong>{rupiah(current["income_total"])}</strong></div>
+<div class="metric"><span>Operating cash flow</span><strong>{rupiah(current["operating_net"])}</strong></div>
+<div class="metric"><span>Safe to spend (estimate)</span><strong>{html.escape(safe["safe_to_spend_formatted"])}</strong></div>
 </section>
-<section class="card"><h2>Saldo dompet</h2><div class="wallets">{wallet_cards}</div></section>
+<section class="card"><h2>Wallet balances</h2><div class="wallets">{wallet_cards}</div></section>
 <section class="grid two" style="margin-top:14px">
-<div class="card"><h2>Pengeluaran per kategori</h2>{_bar_rows(current["expense_by_category"])}</div>
-<div class="card"><h2>Pengeluaran per dompet</h2>{_bar_rows(current["expense_by_wallet"])}</div>
+<div class="card"><h2>Expenses by category</h2>{_bar_rows(current["expense_by_category"])}</div>
+<div class="card"><h2>Expenses by wallet</h2>{_bar_rows(current["expense_by_wallet"])}</div>
 </section>
 <section class="grid two" style="margin-top:14px">
-<div class="card"><h2>Target tabungan</h2>{goal_rows}</div>
-<div class="card"><h2>Perkiraan aman dibelanjakan</h2>
-<p><strong>{html.escape(safe["safe_to_spend_formatted"])}</strong> sampai akhir bulan, sekitar <strong>{html.escape(safe["daily_estimate_formatted"])}</strong> per hari.</p>
-<p class="muted">Tagihan/utang jatuh tempo: {html.escape(safe["unpaid_bills_and_debts_due_formatted"])} • Dana minimum: {html.escape(safe["minimum_reserve_formatted"])} • Alokasi target: {html.escape(safe["virtual_goal_allocations_formatted"])}</p></div>
+<div class="card"><h2>Savings goals</h2>{goal_rows}</div>
+<div class="card"><h2>Safe-to-spend estimate</h2>
+<p><strong>{html.escape(safe["safe_to_spend_formatted"])}</strong> through the end of the month, about <strong>{html.escape(safe["daily_estimate_formatted"])}</strong> per day.</p>
+<p class="muted">Bills/debts due: {html.escape(safe["unpaid_bills_and_debts_due_formatted"])} • Minimum reserve: {html.escape(safe["minimum_reserve_formatted"])} • Goal allocations: {html.escape(safe["virtual_goal_allocations_formatted"])}</p></div>
 </section>
-<section class="card" style="margin-top:14px"><h2>Tagihan, utang, dan piutang terbuka</h2><div class="table-wrap"><table><thead><tr><th>ID</th><th>Nama</th><th>Jenis</th><th>Sisa</th><th>Jatuh tempo</th><th>Status</th></tr></thead><tbody>{obligation_rows}</tbody></table></div></section>
-<section class="card" style="margin-top:14px"><h2>Pengeluaran terbesar</h2><div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Deskripsi</th><th>Kategori</th><th>Dompet</th><th>Nominal</th></tr></thead><tbody>{top_rows}</tbody></table></div></section>
-<footer>Jangan buka dashboard ini ke internet publik. Akses lewat SSH tunnel saja.</footer>
+<section class="card" style="margin-top:14px"><h2>Open bills, debts, and receivables</h2><div class="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Remaining</th><th>Due date</th><th>Status</th></tr></thead><tbody>{obligation_rows}</tbody></table></div></section>
+<section class="card" style="margin-top:14px"><h2>Largest expenses</h2><div class="table-wrap"><table><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Wallet</th><th>Amount</th></tr></thead><tbody>{top_rows}</tbody></table></div></section>
+<footer>Do not expose this dashboard to the public internet. Access it only through an SSH tunnel.</footer>
 <script type="application/json" id="finance-data">{payload}</script>
 </main></body></html>'''
 

@@ -31,18 +31,18 @@ CATEGORY_CANDIDATES = ["category", "kategori"]
 
 def _read_csv(path: Path) -> tuple[list[str], list[dict[str, str]]]:
     if not path.exists() or not path.is_file():
-        raise ValueError(f"File CSV tidak ditemukan: {path}")
+        raise ValueError(f"CSV file not found: {path}")
     last_error = None
     for encoding in ("utf-8-sig", "utf-8", "latin-1"):
         try:
             with path.open("r", encoding=encoding, newline="") as f:
                 reader = csv.DictReader(f)
                 if not reader.fieldnames:
-                    raise ValueError("CSV tidak memiliki header.")
+                    raise ValueError("CSV has no header.")
                 return list(reader.fieldnames), [dict(row) for row in reader]
         except UnicodeDecodeError as exc:
             last_error = exc
-    raise ValueError("Encoding CSV tidak dapat dibaca.") from last_error
+    raise ValueError("CSV encoding could not be read.") from last_error
 
 
 def _find_column(headers: list[str], explicit: str | None, candidates: list[str]) -> str | None:
@@ -50,7 +50,7 @@ def _find_column(headers: list[str], explicit: str | None, candidates: list[str]
     if explicit:
         key = normalize(explicit)
         if key not in normalized:
-            raise ValueError(f"Kolom {explicit!r} tidak ditemukan di CSV.")
+            raise ValueError(f"Column {explicit!r} not found in the CSV.")
         return normalized[key]
     for candidate in candidates:
         if candidate in normalized:
@@ -61,11 +61,11 @@ def _find_column(headers: list[str], explicit: str | None, candidates: list[str]
 def _parse_date(raw: str, date_format: str | None) -> str:
     raw = raw.strip()
     if not raw:
-        raise ValueError("Tanggal kosong.")
+        raise ValueError("Date is empty.")
     if date_format:
         parsed = datetime.strptime(raw, date_format)
         return parsed.replace(tzinfo=TZ).isoformat(timespec="seconds")
-    # ISO first, then common Indonesian formats.
+    # ISO first, then common Indonesian bank export formats.
     for fmt in (None, "%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d", "%d/%m/%Y %H:%M", "%Y-%m-%d %H:%M:%S"):
         try:
             if fmt is None:
@@ -73,7 +73,7 @@ def _parse_date(raw: str, date_format: str | None) -> str:
             return datetime.strptime(raw, fmt).replace(tzinfo=TZ).isoformat(timespec="seconds")
         except ValueError:
             continue
-    raise ValueError(f"Tanggal tidak dapat dipahami: {raw!r}")
+    raise ValueError(f"Date could not be parsed: {raw!r}")
 
 
 def _direction(raw: str) -> str | None:
@@ -102,7 +102,7 @@ def import_preview(
     positive_is: str = "income",
 ) -> dict[str, Any]:
     if positive_is not in {"income", "expense"}:
-        raise ValueError("positive-is harus income atau expense.")
+        raise ValueError("positive-is must be income or expense.")
     path = Path(file_path).expanduser().resolve()
     headers, rows = _read_csv(path)
     date_col = _find_column(headers, date_column, DATE_CANDIDATES)
@@ -114,9 +114,9 @@ def import_preview(
     external_col = _find_column(headers, external_id_column, EXTERNAL_ID_CANDIDATES)
     category_col = _find_column(headers, category_column, CATEGORY_CANDIDATES)
     if not date_col or not desc_col:
-        raise ValueError("Kolom tanggal dan deskripsi wajib ditemukan atau disebutkan eksplisit.")
+        raise ValueError("Date and description columns must be detected or specified explicitly.")
     if not amount_col and not debit_col and not credit_col:
-        raise ValueError("Butuh kolom amount atau pasangan debit/credit.")
+        raise ValueError("An amount column or debit/credit pair is required.")
 
     conn = connect()
     wallet = resolve_wallet(conn, wallet_name)
@@ -153,13 +153,13 @@ def import_preview(
                 debit = parse_amount(debit_raw, allow_zero=True) if debit_raw else 0
                 credit = parse_amount(credit_raw, allow_zero=True) if credit_raw else 0
                 if debit > 0 and credit > 0:
-                    raise ValueError("Baris memiliki debit dan credit sekaligus.")
+                    raise ValueError("Row contains both debit and credit values.")
                 if debit > 0:
                     tx_type, amount = "expense", debit
                 elif credit > 0:
                     tx_type, amount = "income", credit
                 else:
-                    raise ValueError("Nominal debit/credit kosong.")
+                    raise ValueError("Debit/credit amount is empty.")
             else:
                 signed = parse_signed_amount(raw_row.get(amount_col, ""))
                 if tx_type is None:
@@ -169,11 +169,11 @@ def import_preview(
                         tx_type = positive_is
                 amount = abs(signed)
                 if amount == 0:
-                    raise ValueError("Nominal 0 tidak dapat diimpor.")
+                    raise ValueError("A zero amount cannot be imported.")
             if tx_type not in {"expense", "income"}:
-                raise ValueError("Jenis transaksi tidak dapat ditentukan.")
+                raise ValueError("Transaction type could not be determined.")
             if not description:
-                raise ValueError("Deskripsi kosong.")
+                raise ValueError("Description is empty.")
 
             if category_col and (raw_row.get(category_col) or "").strip():
                 category = resolve_category(conn, raw_row[category_col], tx_type)
@@ -184,7 +184,7 @@ def import_preview(
                 category_name = category["name"]
             else:
                 status = "unresolved"
-                error = "Kategori belum dapat ditentukan."
+                error = "Category could not be determined."
 
             if external_col and (raw_row.get(external_col) or "").strip():
                 external_id = f"{normalize(source_name)}:{raw_row[external_col].strip()}"
@@ -192,7 +192,7 @@ def import_preview(
                     "SELECT 1 FROM transactions WHERE external_id=?", (external_id,)
                 ).fetchone():
                     status = "duplicate"
-                    error = "External ID sudah pernah diimpor."
+                    error = "External ID has already been imported."
 
             if status == "ready":
                 duplicates = duplicate_candidates(
@@ -206,7 +206,7 @@ def import_preview(
                 )
                 if duplicates:
                     status = "duplicate"
-                    error = f"Mirip transaksi #{duplicates[0]['id']}."
+                    error = f"Similar to transaction #{duplicates[0]['id']}."
         except Exception as exc:
             status = "error"
             error = str(exc)
@@ -316,10 +316,10 @@ def import_row_set(
     row = conn.execute("SELECT * FROM import_rows WHERE id=?", (import_row_id,)).fetchone()
     if not row:
         conn.close()
-        raise ValueError(f"Baris import #{import_row_id} tidak ditemukan.")
+        raise ValueError(f"Import row #{import_row_id} not found.")
     if row["status"] == "committed":
         conn.close()
-        raise ValueError("Baris sudah dikomit.")
+        raise ValueError("Row has already been committed.")
     if skip:
         conn.execute(
             "UPDATE import_rows SET status='skipped',error_message=NULL WHERE id=?",
@@ -332,7 +332,7 @@ def import_row_set(
     final_type = tx_type or row["type"]
     if final_type not in {"expense", "income"}:
         conn.close()
-        raise ValueError("Jenis transaksi harus expense atau income.")
+        raise ValueError("Transaction type must be expense or income.")
     category_id = row["category_id"]
     category_label = None
     if category_name:
@@ -347,7 +347,7 @@ def import_row_set(
             category_label = category["name"] if category else None
     if not category_id:
         conn.close()
-        raise ValueError("Kategori wajib ditentukan sebelum baris siap dikomit.")
+        raise ValueError("A category is required before the row can be committed.")
     conn.execute(
         """
         UPDATE import_rows
@@ -372,10 +372,10 @@ def import_commit(batch_id: int, force_duplicates: bool = False) -> dict[str, An
     batch = conn.execute("SELECT * FROM import_batches WHERE id=?", (batch_id,)).fetchone()
     if not batch:
         conn.close()
-        raise ValueError(f"Batch import #{batch_id} tidak ditemukan.")
+        raise ValueError(f"Import batch #{batch_id} not found.")
     if batch["status"] != "preview":
         conn.close()
-        raise ValueError("Batch ini sudah dikomit atau dibatalkan.")
+        raise ValueError("This batch has already been committed or cancelled.")
     wallet = conn.execute("SELECT * FROM wallets WHERE id=?", (batch["wallet_id"],)).fetchone()
     statuses = ["ready"] + (["duplicate"] if force_duplicates else [])
     placeholders = ",".join("?" for _ in statuses)
@@ -395,7 +395,7 @@ def import_commit(batch_id: int, force_duplicates: bool = False) -> dict[str, An
             if row["external_id"] and conn.execute(
                 "SELECT 1 FROM transactions WHERE external_id=?", (row["external_id"],)
             ).fetchone():
-                raise ValueError(f"External ID {row['external_id']!r} sudah pernah diimpor.")
+                raise ValueError(f"External ID {row['external_id']!r} has already been imported.")
             duplicates = duplicate_candidates(
                 conn,
                 occurred_at=row["occurred_at"],
@@ -406,7 +406,7 @@ def import_commit(batch_id: int, force_duplicates: bool = False) -> dict[str, An
                 description=row["description"],
             )
             if duplicates and not force_duplicates:
-                raise ValueError(f"Mirip transaksi #{duplicates[0]['id']}; tinjau sebelum commit.")
+                raise ValueError(f"Similar to transaction #{duplicates[0]['id']}; review before committing.")
             tx_id = create_transaction(
                 conn,
                 tx_type=row["type"],

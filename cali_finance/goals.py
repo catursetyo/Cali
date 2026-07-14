@@ -38,7 +38,7 @@ def goal_add(
     except Exception as exc:
         conn.close()
         if "UNIQUE" in str(exc):
-            raise ValueError(f"Target tabungan {name!r} sudah ada.") from exc
+            raise ValueError(f"Savings goal {name!r} already exists.") from exc
         raise
     conn.commit()
     goal_id = cursor.lastrowid
@@ -63,7 +63,7 @@ def _resolve_goal(conn, goal: str | int):
             "SELECT * FROM savings_goals WHERE name=? COLLATE NOCASE", (str(goal).strip(),)
         ).fetchone()
     if not row:
-        raise ValueError(f"Target tabungan {goal!r} tidak ditemukan.")
+        raise ValueError(f"Savings goal {goal!r} not found.")
     return row
 
 
@@ -80,12 +80,12 @@ def goal_contribute(
     row = _resolve_goal(conn, goal)
     if row["status"] not in {"active", "paused"}:
         conn.close()
-        raise ValueError("Target tabungan tidak aktif.")
+        raise ValueError("Savings goal is not active.")
     amount = parse_amount(amount_raw)
     if row["current_amount"] + amount > row["target_amount"] and not force_over_target:
         conn.close()
         raise ValueError(
-            "Kontribusi melebihi target. Pakai --force-over-target jika memang disengaja."
+            "Contribution exceeds the target. Use --force-over-target if this is intentional."
         )
     wallet_id = None
     wallet_label = None
@@ -123,7 +123,7 @@ def goal_contribute(
         "status": status,
         "wallet_reference": wallet_label,
         "wallet_balance_changed": False,
-        "note": "Kontribusi adalah alokasi virtual; saldo dompet tidak berubah.",
+        "note": "Contributions are virtual allocations; wallet balances do not change.",
     }
 
 
@@ -139,7 +139,7 @@ def goal_withdraw(
     amount = parse_amount(amount_raw)
     if amount > row["current_amount"]:
         conn.close()
-        raise ValueError("Penarikan melebihi dana yang sudah dialokasikan.")
+        raise ValueError("Withdrawal exceeds the allocated funds.")
     occurred_at = parse_occurrence(date_raw)
     now = datetime.now(TZ).isoformat(timespec="seconds")
     conn.execute(

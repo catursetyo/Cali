@@ -14,24 +14,24 @@ DEFAULT_WALLETS = [
 ]
 
 DEFAULT_CATEGORIES = [
-    ("Makan", "expense", ["makan", "minum", "kuliner", "jajan", "kopi", "snack", "bakso", "restoran", "warung"]),
-    ("Transportasi", "expense", ["transportasi", "transport", "bensin", "parkir", "ojol", "gojek", "grab", "tol"]),
-    ("Kebutuhan Harian", "expense", ["kebutuhan harian", "sembako", "toiletries", "rumah tangga", "indomaret", "alfamart"]),
-    ("Tagihan", "expense", ["tagihan", "listrik", "air", "internet", "pulsa", "paket data", "wifi"]),
-    ("Pendidikan", "expense", ["pendidikan", "kuliah", "kursus", "buku", "kelas"]),
-    ("Kesehatan", "expense", ["kesehatan", "obat", "dokter", "rumah sakit", "apotek"]),
-    ("Sosial", "expense", ["sosial", "nongkrong", "hadiah", "traktir", "patungan"]),
-    ("Hiburan", "expense", ["hiburan", "game", "film", "konser", "bioskop"]),
-    ("Belanja", "expense", ["belanja", "pakaian", "elektronik", "aksesoris", "shopee", "tokopedia"]),
-    ("Donasi", "expense", ["donasi", "sedekah", "amal"]),
-    ("Langganan", "expense", ["langganan", "subscription", "netflix", "spotify", "youtube premium"]),
-    ("Perawatan Diri", "expense", ["skincare", "salon", "barbershop", "potong rambut"]),
-    ("Lainnya", "expense", ["lainnya", "lain-lain", "other"]),
-    ("Gaji", "income", ["gaji", "salary"]),
+    ("Food", "expense", ["makan", "minum", "kuliner", "jajan", "kopi", "snack", "bakso", "restoran", "warung"]),
+    ("Transportation", "expense", ["transportasi", "transport", "bensin", "parkir", "ojol", "gojek", "grab", "tol"]),
+    ("Daily Needs", "expense", ["kebutuhan harian", "sembako", "toiletries", "rumah tangga", "indomaret", "alfamart"]),
+    ("Bills", "expense", ["tagihan", "listrik", "air", "internet", "pulsa", "paket data", "wifi"]),
+    ("Education", "expense", ["pendidikan", "kuliah", "kursus", "buku", "kelas"]),
+    ("Health", "expense", ["kesehatan", "obat", "dokter", "rumah sakit", "apotek"]),
+    ("Social", "expense", ["sosial", "nongkrong", "hadiah", "traktir", "patungan"]),
+    ("Entertainment", "expense", ["hiburan", "game", "film", "konser", "bioskop"]),
+    ("Shopping", "expense", ["belanja", "pakaian", "elektronik", "aksesoris", "shopee", "tokopedia"]),
+    ("Donations", "expense", ["donasi", "sedekah", "amal"]),
+    ("Subscriptions", "expense", ["langganan", "subscription", "netflix", "spotify", "youtube premium"]),
+    ("Personal Care", "expense", ["perawatan diri", "skincare", "salon", "barbershop", "potong rambut"]),
+    ("Other", "expense", ["lainnya", "lain-lain"]),
+    ("Salary", "income", ["gaji"]),
     ("Bonus", "income", ["bonus"]),
-    ("Hadiah", "income", ["hadiah masuk", "gift"]),
+    ("Gifts", "income", ["hadiah", "hadiah masuk", "gift"]),
     ("Freelance", "income", ["freelance", "proyek", "project fee"]),
-    ("Pemasukan Lainnya", "income", ["pemasukan lainnya", "income lainnya"]),
+    ("Other Income", "income", ["pemasukan lainnya", "income lainnya"]),
 ]
 
 
@@ -358,13 +358,26 @@ def init_db() -> None:
             )
 
     for name, category_type, aliases in DEFAULT_CATEGORIES:
-        conn.execute(
-            "INSERT OR IGNORE INTO categories(name, type, created_at) VALUES(?,?,?)",
-            (name, category_type, now),
-        )
-        category_id = conn.execute(
-            "SELECT id FROM categories WHERE name=? COLLATE NOCASE", (name,)
-        ).fetchone()["id"]
+        category = conn.execute(
+            "SELECT id FROM categories WHERE name=? COLLATE NOCASE AND type=?",
+            (name, category_type),
+        ).fetchone()
+        if not category:
+            for alias in aliases:
+                category = conn.execute(
+                    "SELECT id FROM categories WHERE name=? COLLATE NOCASE AND type=?",
+                    (alias, category_type),
+                ).fetchone()
+                if category:
+                    break
+        if not category:
+            cursor = conn.execute(
+                "INSERT INTO categories(name, type, created_at) VALUES(?,?,?)",
+                (name, category_type, now),
+            )
+            category_id = int(cursor.lastrowid)
+        else:
+            category_id = int(category["id"])
         for alias in aliases + [name]:
             conn.execute(
                 "INSERT OR IGNORE INTO category_aliases(alias, category_id) VALUES(?,?)",

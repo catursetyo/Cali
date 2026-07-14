@@ -125,7 +125,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--amount", required=True)
     p.add_argument("--from-wallet", required=True)
     p.add_argument("--to-wallet", required=True)
-    p.add_argument("--description", default="Transfer antar dompet")
+    p.add_argument("--description", default="Transfer between wallets")
     p.add_argument("--date")
     p.add_argument("--note")
     p.add_argument("--raw-input")

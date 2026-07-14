@@ -43,7 +43,7 @@ def parse_occurrence(raw: str | None) -> str:
             parsed = parsed.replace(tzinfo=TZ)
         return parsed.astimezone(TZ).isoformat(timespec="seconds")
     except ValueError as exc:
-        raise ValueError("Tanggal harus berformat YYYY-MM-DD atau ISO-8601.") from exc
+        raise ValueError("Date must use YYYY-MM-DD or ISO-8601 format.") from exc
 
 
 def resolve_wallet(conn: sqlite3.Connection, value: str) -> sqlite3.Row:
@@ -63,7 +63,7 @@ def resolve_wallet(conn: sqlite3.Connection, value: str) -> sqlite3.Row:
         ).fetchone()
     if not row:
         raise ValueError(
-            f"Dompet {value!r} belum terdaftar. Tambahkan dengan wallet-add."
+            f"Wallet {value!r} is not registered. Add it with wallet-add."
         )
     return row
 
@@ -96,9 +96,9 @@ def resolve_category(
             tuple(params),
         ).fetchone()
     if not row:
-        suffix = f" sebagai {expected_type}" if expected_type else ""
+        suffix = f" as {expected_type}" if expected_type else ""
         raise ValueError(
-            f"Kategori {value!r} belum terdaftar{suffix}. Tambahkan dengan category-add."
+            f"Category {value!r} is not registered{suffix}. Add it with category-add."
         )
     return row
 
@@ -129,7 +129,7 @@ def wallet_balance(conn: sqlite3.Connection, wallet_id: int) -> int:
         "SELECT opening_balance FROM wallets WHERE id=?", (wallet_id,)
     ).fetchone()
     if not wallet:
-        raise ValueError("Dompet tidak ditemukan.")
+        raise ValueError("Wallet not found.")
 
     rows = conn.execute(
         """
@@ -250,16 +250,16 @@ def _validate_type_fields(
     to_wallet_id: int | None,
 ) -> None:
     if tx_type not in TRANSACTION_TYPES:
-        raise ValueError(f"Jenis transaksi tidak valid: {tx_type}")
+        raise ValueError(f"Invalid transaction type: {tx_type}")
     if tx_type in {"expense", "income"} and category_id is None:
-        raise ValueError("Pengeluaran dan pemasukan wajib memiliki kategori.")
+        raise ValueError("Expenses and income require a category.")
     if tx_type == "transfer":
         if to_wallet_id is None:
-            raise ValueError("Transfer wajib memiliki dompet tujuan.")
+            raise ValueError("Transfers require a destination wallet.")
         if wallet_id == to_wallet_id:
-            raise ValueError("Dompet asal dan tujuan tidak boleh sama.")
+            raise ValueError("Source and destination wallets must be different.")
     elif to_wallet_id is not None:
-        raise ValueError("Dompet tujuan hanya boleh dipakai untuk transfer.")
+        raise ValueError("A destination wallet may only be used for transfers.")
 
 
 def create_transaction(
@@ -315,7 +315,7 @@ def create_transaction(
         )
     except sqlite3.IntegrityError as exc:
         if external_id and "external_id" in str(exc).lower():
-            raise ValueError(f"External ID {external_id!r} sudah pernah diimpor.") from exc
+            raise ValueError(f"External ID {external_id!r} has already been imported.") from exc
         raise
     return int(cursor.lastrowid)
 
@@ -337,7 +337,7 @@ def add_transaction(
     receipt_id: int | None = None,
 ) -> dict[str, Any]:
     if tx_type not in {"expense", "income"}:
-        raise ValueError("Gunakan add hanya untuk expense atau income.")
+        raise ValueError("Use add only for expense or income transactions.")
     conn = connect()
     wallet = resolve_wallet(conn, wallet_name)
     if category_name:
@@ -347,7 +347,7 @@ def add_transaction(
         if not category:
             conn.close()
             raise ValueError(
-                "Kategori belum jelas. Sebutkan kategori sebelum transaksi dicatat."
+                "Category is unclear. Specify a category before recording the transaction."
             )
     amount = parse_amount(amount_raw)
     occurred_at = parse_occurrence(date_raw)
@@ -366,7 +366,7 @@ def add_transaction(
         return {
             "ok": False,
             "code": "possible_duplicate",
-            "message": "Ada transaksi mirip. Minta konfirmasi sebelum memakai --force-duplicate.",
+            "message": "A similar transaction exists. Ask for confirmation before using --force-duplicate.",
             "candidates": duplicates,
         }
 
@@ -391,7 +391,7 @@ def add_transaction(
     from .budgets import budget_status
     active_budgets = [
         item for item in budget_status(anchor_date=occurred_at[:10])
-        if item["category"] in {category["name"], "Semua kategori"}
+        if item["category"] in {category["name"], "All categories"}
     ] if tx_type == "expense" else []
     warnings = [item for item in active_budgets if item["threshold"]]
     return {
@@ -467,7 +467,7 @@ def wallet_add(
     aliases: str | None,
 ) -> dict[str, Any]:
     if kind not in {"cash", "bank", "ewallet", "other"}:
-        raise ValueError("Jenis dompet tidak valid.")
+        raise ValueError("Invalid wallet type.")
     conn = connect()
     now = datetime.now(TZ).isoformat(timespec="seconds")
     opening = parse_signed_amount(opening_balance_raw)
@@ -478,7 +478,7 @@ def wallet_add(
         )
     except sqlite3.IntegrityError as exc:
         conn.close()
-        raise ValueError(f"Dompet {name!r} sudah ada.") from exc
+        raise ValueError(f"Wallet {name!r} already exists.") from exc
     wallet_id = cursor.lastrowid
     alias_values = [name] + (aliases.split(",") if aliases else [])
     for alias in alias_values:
@@ -506,7 +506,7 @@ def wallet_set(
     if kind is not None:
         if kind not in {"cash", "bank", "ewallet", "other"}:
             conn.close()
-            raise ValueError("Jenis dompet tidak valid.")
+            raise ValueError("Invalid wallet type.")
         updates.append("kind=?")
         params.append(kind)
     if opening_balance_raw is not None:
@@ -544,7 +544,7 @@ def category_add(
     name: str, category_type: str, aliases: str | None
 ) -> dict[str, Any]:
     if category_type not in {"expense", "income"}:
-        raise ValueError("Jenis kategori harus expense atau income.")
+        raise ValueError("Category type must be expense or income.")
     conn = connect()
     now = datetime.now(TZ).isoformat(timespec="seconds")
     try:
@@ -554,7 +554,7 @@ def category_add(
         )
     except sqlite3.IntegrityError as exc:
         conn.close()
-        raise ValueError(f"Kategori {name!r} sudah ada.") from exc
+        raise ValueError(f"Category {name!r} already exists.") from exc
     category_id = cursor.lastrowid
     alias_values = [name] + (aliases.split(",") if aliases else [])
     for alias in alias_values:
@@ -683,10 +683,10 @@ def void_transaction(transaction_id: int, reason: str) -> dict[str, Any]:
     ).fetchone()
     if not row:
         conn.close()
-        raise ValueError(f"Transaksi #{transaction_id} tidak ditemukan.")
+        raise ValueError(f"Transaction #{transaction_id} not found.")
     if row["status"] == "void":
         conn.close()
-        raise ValueError(f"Transaksi #{transaction_id} sudah dibatalkan.")
+        raise ValueError(f"Transaction #{transaction_id} has already been voided.")
     now = datetime.now(TZ).isoformat(timespec="seconds")
     conn.execute(
         "UPDATE transactions SET status='void',voided_at=?,void_reason=? WHERE id=?",
@@ -751,10 +751,10 @@ def reconcile_adjust(
     ).fetchone()
     if not check:
         conn.close()
-        raise ValueError(f"Pemeriksaan saldo #{check_id} tidak ditemukan.")
+        raise ValueError(f"Balance check #{check_id} not found.")
     if check["status"] != "pending":
         conn.close()
-        raise ValueError("Pemeriksaan saldo ini sudah ditutup.")
+        raise ValueError("This balance check has already been closed.")
     difference = check["difference"]
     if difference == 0:
         conn.execute(
@@ -771,7 +771,7 @@ def reconcile_adjust(
         tx_type=tx_type,
         amount=amount,
         wallet_id=check["wallet_id"],
-        description=f"Penyesuaian saldo: {reason.strip()}",
+        description=f"Balance adjustment: {reason.strip()}",
         occurred_at=occurred_at,
         note=f"Balance check #{check_id}",
         source="reconciliation",
@@ -808,10 +808,10 @@ def reconcile_close(check_id: int, reason: str) -> dict[str, Any]:
     ).fetchone()
     if not row:
         conn.close()
-        raise ValueError(f"Pemeriksaan saldo #{check_id} tidak ditemukan.")
+        raise ValueError(f"Balance check #{check_id} not found.")
     if row["status"] != "pending":
         conn.close()
-        raise ValueError("Pemeriksaan saldo ini sudah ditutup.")
+        raise ValueError("This balance check has already been closed.")
     conn.execute(
         "UPDATE balance_checks SET status='closed',note=COALESCE(note,'') || ? WHERE id=?",
         (f" | Closed: {reason.strip()}", check_id),

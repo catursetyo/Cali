@@ -10,7 +10,7 @@ UPGRADE_DIR="$FINANCE_DIR/upgrades"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 
 command -v python3 >/dev/null 2>&1 || {
-  echo "python3 tidak ditemukan." >&2
+  echo "python3 not found." >&2
   exit 1
 }
 
@@ -56,20 +56,20 @@ python3 "$FINANCE_DIR/finance.py" health
 
 cat <<EOF
 
-Cali Finance terpasang.
+Cali Finance installed.
 
 App       : $FINANCE_DIR/finance.py
 Database  : $FINANCE_DIR/finance.db
 Skill     : $SKILL_DIR/SKILL.md
 Cron files: $SCRIPTS_DIR/finance-*.sh
 
-Langkah berikutnya:
+Next steps:
   1. Restart gateway: hermes gateway restart
-  2. Di Telegram kirim: /reset
-  3. Tes: /personal-finance tampilkan saldo semua dompet
+  2. Send in Telegram: /reset
+  3. Test: /personal-finance show all wallet balances
 
-OCR opsional:
+Optional OCR:
   cd "$SOURCE_DIR" && ./install-ocr.sh
 
-Installer tidak mengubah SOUL.md atau personality Cali.
+The installer does not change SOUL.md or Cali's personality.
 EOF

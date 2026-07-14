@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Changes documentation, Hermes instructions, dashboard labels, installer
+  output, reports, alerts, and CLI errors to English.
+- Uses English default category names for new databases while preserving
+  Indonesian aliases and existing database labels for compatibility.
+
 ## Initial release
 
 - Adds a local SQLite ledger with safe schema initialization.

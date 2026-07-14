@@ -18,7 +18,7 @@ def period_bounds(period: str, anchor: date) -> tuple[date, date, str]:
     if period == "week":
         start = anchor - timedelta(days=anchor.weekday())
         end = start + timedelta(days=7)
-        label = f"{start.isoformat()} s.d. {(end - timedelta(days=1)).isoformat()}"
+        label = f"{start.isoformat()} to {(end - timedelta(days=1)).isoformat()}"
     elif period == "month":
         start = anchor.replace(day=1)
         if start.month == 12:
@@ -27,7 +27,7 @@ def period_bounds(period: str, anchor: date) -> tuple[date, date, str]:
             end = start.replace(month=start.month + 1)
         label = start.strftime("%Y-%m")
     else:
-        raise ValueError("Period harus week atau month.")
+        raise ValueError("Period must be week or month.")
     return start, end, label
 
 
@@ -66,7 +66,7 @@ def _summarize_rows(rows) -> dict[str, Any]:
     for row in rows:
         totals[row["type"]] += row["amount"]
         if row["type"] == "expense":
-            by_category[row["category"] or "Tanpa kategori"] += row["amount"]
+            by_category[row["category"] or "Uncategorized"] += row["amount"]
             by_wallet[row["wallet"]] += row["amount"]
             top_expenses.append(
                 {
@@ -202,50 +202,50 @@ def report_text(data: dict[str, Any]) -> str:
     current = data["current"]
     comparison = data["comparison"]
     lines = [
-        f"LAPORAN {data['period'].upper()} — {data['label']}",
-        f"Pengeluaran: {rupiah(current['expense_total'])}",
-        f"Pemasukan: {rupiah(current['income_total'])}",
-        f"Arus kas operasional: {rupiah(current['operating_net'])}",
-        f"Pergerakan saldo bersih: {rupiah(current['cash_movement'])}",
-        f"Jumlah transaksi: {current['transaction_count']}",
-        f"Rata-rata pengeluaran harian: {rupiah(current['average_daily_expense'])}",
+        f"{data['period'].upper()} REPORT — {data['label']}",
+        f"Expenses: {rupiah(current['expense_total'])}",
+        f"Income: {rupiah(current['income_total'])}",
+        f"Operating cash flow: {rupiah(current['operating_net'])}",
+        f"Net balance movement: {rupiah(current['cash_movement'])}",
+        f"Transaction count: {current['transaction_count']}",
+        f"Average daily expense: {rupiah(current['average_daily_expense'])}",
     ]
     if comparison["expense_change_percent"] is None:
-        lines.append("Perbandingan: periode sebelumnya belum memiliki pengeluaran.")
+        lines.append("Comparison: the previous period has no expenses.")
     else:
-        direction = "naik" if comparison["expense_change"] > 0 else "turun" if comparison["expense_change"] < 0 else "tetap"
+        direction = "increased" if comparison["expense_change"] > 0 else "decreased" if comparison["expense_change"] < 0 else "did not change"
         lines.append(
-            f"Perbandingan: pengeluaran {direction} {comparison['expense_change_percent_formatted']} "
-            f"({comparison['expense_change_formatted']}) dari periode sebelumnya."
+            f"Comparison: expenses {direction} by {comparison['expense_change_percent_formatted']} "
+            f"({comparison['expense_change_formatted']}) from the previous period."
         )
 
     significant_changes = [item for item in comparison.get("category_changes", []) if item["change"] != 0][:5]
     if significant_changes:
-        lines.extend(["", "Perubahan kategori terbesar:"])
+        lines.extend(["", "Largest category changes:"])
         for item in significant_changes:
             direction = "+" if item["change"] > 0 else ""
-            lines.append(f"- {item['name']}: {direction}{item['change_formatted']} dibanding periode sebelumnya")
+            lines.append(f"- {item['name']}: {direction}{item['change_formatted']} versus the previous period")
 
-    lines.extend(["", "Pengeluaran per kategori:"])
+    lines.extend(["", "Expenses by category:"])
     if current["expense_by_category"]:
         lines.extend(
             f"- {item['name']}: {item['amount_formatted']}"
             for item in current["expense_by_category"]
         )
     else:
-        lines.append("- Belum ada pengeluaran.")
+        lines.append("- No expenses yet.")
 
-    lines.extend(["", "Pengeluaran per dompet:"])
+    lines.extend(["", "Expenses by wallet:"])
     if current["expense_by_wallet"]:
         lines.extend(
             f"- {item['name']}: {item['amount_formatted']}"
             for item in current["expense_by_wallet"]
         )
     else:
-        lines.append("- Belum ada pengeluaran.")
+        lines.append("- No expenses yet.")
 
     if data["budgets"]:
-        lines.extend(["", "Status budget:"])
+        lines.extend(["", "Budget status:"])
         lines.extend(
             f"- {item['category']}: {item['spent_formatted']} / {item['limit_formatted']} "
             f"({item['usage_percent_formatted']})"
@@ -253,7 +253,7 @@ def report_text(data: dict[str, Any]) -> str:
         )
 
     if data["obligations_due"]:
-        lines.extend(["", "Tagihan, utang, atau piutang jatuh tempo pada periode ini:"])
+        lines.extend(["", "Bills, debts, or receivables due in this period:"])
         lines.extend(
             f"- #{item['id']} {item['name']}: {item['remaining_amount_formatted']} — "
             f"{item['due_date']} ({item['status']})"
@@ -262,15 +262,15 @@ def report_text(data: dict[str, Any]) -> str:
 
     financing = []
     if current["debt_borrowed"]:
-        financing.append(f"utang diterima {rupiah(current['debt_borrowed'])}")
+        financing.append(f"debt received {rupiah(current['debt_borrowed'])}")
     if current["debt_repaid"]:
-        financing.append(f"utang dibayar {rupiah(current['debt_repaid'])}")
+        financing.append(f"debt repaid {rupiah(current['debt_repaid'])}")
     if current["loans_given"]:
-        financing.append(f"uang dipinjamkan {rupiah(current['loans_given'])}")
+        financing.append(f"money lent {rupiah(current['loans_given'])}")
     if current["loans_collected"]:
-        financing.append(f"piutang diterima {rupiah(current['loans_collected'])}")
+        financing.append(f"receivables collected {rupiah(current['loans_collected'])}")
     if financing:
-        lines.extend(["", "Arus pembiayaan: " + ", ".join(financing) + "."])
+        lines.extend(["", "Financing flows: " + ", ".join(financing) + "."])
     return "\n".join(lines)
 
 
@@ -332,5 +332,5 @@ def safe_to_spend(anchor_date: str | None = None) -> dict[str, Any]:
         "daily_estimate": daily,
         "daily_estimate_formatted": rupiah(daily),
         "is_estimate": True,
-        "warning": "Perkiraan ini hanya akurat bila semua saldo, tagihan, utang, dan transaksi sudah tercatat.",
+        "warning": "This estimate is accurate only when all balances, bills, debts, and transactions are recorded.",
     }

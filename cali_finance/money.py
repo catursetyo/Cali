@@ -35,10 +35,10 @@ def parse_amount(raw: str | int, *, allow_zero: bool = False) -> int:
         try:
             amount = int(Decimal(value) * multiplier)
         except (InvalidOperation, ValueError) as exc:
-            raise ValueError(f"Nominal tidak valid: {raw!r}") from exc
+            raise ValueError(f"Invalid amount: {raw!r}") from exc
 
     if amount < 0 or (amount == 0 and not allow_zero):
-        raise ValueError("Nominal harus lebih dari 0.")
+        raise ValueError("Amount must be greater than 0.")
     return amount
 
 

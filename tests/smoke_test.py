@@ -3,9 +3,12 @@ from __future__ import annotations
 
 import base64
 import os
+import sys
 import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 ROOT = Path(tempfile.mkdtemp(prefix="cali-finance-test-"))
 os.environ["HERMES_HOME"] = str(ROOT / ".hermes")
@@ -51,8 +54,8 @@ def main() -> None:
         tx_type="expense",
         amount_raw="25000",
         wallet_name="Cash",
-        description="Makan bakso",
-        category_name="Makan",
+        description="Meatball soup",
+        category_name="Food",
         date_raw=today.isoformat(),
     )
     assert first["ok"]
@@ -61,8 +64,8 @@ def main() -> None:
         tx_type="expense",
         amount_raw="25000",
         wallet_name="Cash",
-        description="Makan bakso",
-        category_name="Makan",
+        description="Meatball soup",
+        category_name="Food",
         date_raw=today.isoformat(),
     )
     assert duplicate["code"] == "possible_duplicate"
@@ -71,8 +74,8 @@ def main() -> None:
         tx_type="expense",
         amount_raw="25000",
         wallet_name="Cash",
-        description="Makan bakso",
-        category_name="Makan",
+        description="Meatball soup",
+        category_name="Food",
         date_raw=today.isoformat(),
         force_duplicate=True,
     )
@@ -85,7 +88,7 @@ def main() -> None:
 
     budget_set(
         limit_raw="60000",
-        category_name="Makan",
+        category_name="Food",
         period_type="month",
         start_date=month_start.isoformat(),
     )
@@ -93,8 +96,8 @@ def main() -> None:
         tx_type="expense",
         amount_raw="10000",
         wallet_name="Cash",
-        description="Beli kopi",
-        category_name="Makan",
+        description="Buy coffee",
+        category_name="Food",
         date_raw=today.isoformat(),
     )
     assert budget_hit["budget_warnings"][0]["threshold"] == 100
@@ -104,12 +107,12 @@ def main() -> None:
         name="Internet",
         amount_raw="275000",
         due_date=tomorrow.isoformat(),
-        category_name="Tagihan",
+        category_name="Bills",
         default_wallet="BCA",
     )
     obligation_add(
         kind="debt_payable",
-        name="Pinjam Umar",
+        name="Loan from Umar",
         amount_raw="500000",
         counterparty="Umar",
         due_date=(today + timedelta(days=30)).isoformat(),
@@ -117,7 +120,7 @@ def main() -> None:
     )
     obligation_add(
         kind="debt_receivable",
-        name="Pinjaman Zaki",
+        name="Loan to Zaki",
         amount_raw="200000",
         counterparty="Zaki",
         due_date=(today + timedelta(days=20)).isoformat(),
@@ -130,7 +133,7 @@ def main() -> None:
     recurring_add(
         name="Netflix",
         amount_raw="65000",
-        category_name="Langganan",
+        category_name="Subscriptions",
         next_due_date=today.isoformat(),
         default_wallet="GoPay",
     )
@@ -152,13 +155,13 @@ def main() -> None:
     assert "category_changes" in report["comparison"]
 
     check = reconcile_preview("Cash", "300000")
-    reconcile_adjust(check["check_id"], "Selisih uji", "YES")
+    reconcile_adjust(check["check_id"], "Test difference", "YES")
 
     csv_path = ROOT / "bank.csv"
     csv_path.write_text(
-        "tanggal,keterangan,debit,credit,reference\n"
+        "date,description,debit,credit,reference\n"
         f"{today.strftime('%d/%m/%Y')},GOJEK TRIP,20000,,a\n"
-        f"{today.strftime('%d/%m/%Y')},Gaji freelance,,750000,b\n",
+        f"{today.strftime('%d/%m/%Y')},Freelance income,,750000,b\n",
         encoding="utf-8",
     )
     batch = import_preview(
@@ -180,8 +183,8 @@ def main() -> None:
     receipt_confirm(
         receipt_id=receipt["receipt_id"],
         wallet_name="GoPay",
-        category_name="Makan",
-        description="Kopi dari struk",
+        category_name="Food",
+        description="Coffee from receipt",
         amount_raw="18000",
         date_raw=today.isoformat(),
     )

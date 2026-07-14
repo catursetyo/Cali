@@ -6,12 +6,12 @@ SKILL_DIR="$HERMES_BASE/skills/productivity/personal-finance"
 SCRIPTS_DIR="$HERMES_BASE/scripts"
 
 cat <<EOF
-Uninstall aman hanya menghapus aplikasi, skill, dan cron helper.
-Database TIDAK akan dihapus:
+Safe uninstall removes only the application, skill, and cron helpers.
+The database will NOT be deleted:
   $FINANCE_DIR/finance.db
 EOF
 
-read -r -p "Lanjutkan? ketik YES: " confirm
+read -r -p "Continue? Type YES: " confirm
 [[ "$confirm" == "YES" ]] || exit 1
 
 rm -rf "$FINANCE_DIR/cali_finance"
@@ -24,4 +24,4 @@ rm -f "$SCRIPTS_DIR"/finance-weekly-report.sh \
       "$SCRIPTS_DIR"/finance-offsite-backup.sh \
       "$SCRIPTS_DIR"/finance-dashboard-refresh.sh
 
-echo "Aplikasi dihapus. Database tetap tersimpan."
+echo "Application removed. Database preserved."

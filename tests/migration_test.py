@@ -3,8 +3,11 @@ from __future__ import annotations
 
 import os
 import sqlite3
+import sys
 import tempfile
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 ROOT = Path(tempfile.mkdtemp(prefix="cali-finance-migration-"))
 os.environ["HERMES_HOME"] = str(ROOT / ".hermes")
@@ -43,7 +46,7 @@ conn.commit()
 conn.close()
 
 from cali_finance.db import connect, init_db
-from cali_finance.ledger import all_wallet_balances
+from cali_finance.ledger import all_wallet_balances, resolve_category
 
 init_db()
 conn = connect()
@@ -52,5 +55,7 @@ assert "fingerprint" in columns
 assert conn.execute("SELECT amount FROM transactions WHERE id=1").fetchone()["amount"] == 20000
 balances = all_wallet_balances(conn)
 assert next(item for item in balances if item["name"] == "Cash")["balance"] == 80000
+assert resolve_category(conn, "Food")["name"] == "Makan"
+assert conn.execute("SELECT COUNT(*) FROM categories WHERE name='Food'").fetchone()[0] == 0
 conn.close()
 print(f"MIGRATION_OK {ROOT}")

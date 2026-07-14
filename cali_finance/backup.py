@@ -22,13 +22,13 @@ def _safe_tar_members(archive: tarfile.TarFile, destination: Path):
     for member in archive.getmembers():
         target = (destination / member.name).resolve()
         if root != target and root not in target.parents:
-            raise ValueError(f"Arsip backup tidak aman: {member.name}")
+            raise ValueError(f"Unsafe backup archive member: {member.name}")
         yield member
 
 
 def backup_local(keep: int = 30) -> dict[str, Any]:
     if keep < 1:
-        raise ValueError("Jumlah backup yang disimpan minimal 1.")
+        raise ValueError("At least one backup must be retained.")
     BACKUP_DIR.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(TZ).strftime("%Y%m%d-%H%M%S-%f")
     snapshot = BACKUP_DIR / f"finance-{stamp}.db"
@@ -93,18 +93,18 @@ def backup_offsite(keep: int = 30) -> dict[str, Any]:
     recipient = os.environ.get("FINANCE_BACKUP_AGE_RECIPIENT", "").strip()
     if not remote:
         raise ValueError(
-            "FINANCE_RCLONE_REMOTE belum diatur. Gunakan remote rclone crypt atau Azure Blob."
+            "FINANCE_RCLONE_REMOTE is not configured. Use an rclone crypt remote or Azure Blob."
         )
     rclone = shutil.which("rclone")
     if not rclone:
-        raise ValueError("rclone belum terpasang.")
+        raise ValueError("rclone is not installed.")
 
     upload_source = source
     encrypted = False
     if recipient:
         age = shutil.which("age")
         if not age:
-            raise ValueError("age belum terpasang, padahal recipient enkripsi sudah diatur.")
+            raise ValueError("age is not installed, but an encryption recipient is configured.")
         encrypted_path = source.with_suffix(source.suffix + ".age")
         result = subprocess.run(
             [age, "-r", recipient, "-o", str(encrypted_path), str(source)],
@@ -114,12 +114,12 @@ def backup_offsite(keep: int = 30) -> dict[str, Any]:
             check=False,
         )
         if result.returncode != 0:
-            raise ValueError(f"Enkripsi backup gagal: {result.stderr.strip()}")
+            raise ValueError(f"Backup encryption failed: {result.stderr.strip()}")
         upload_source = encrypted_path
         encrypted = True
     elif os.environ.get("ALLOW_PLAINTEXT_FINANCE_BACKUP") != "1":
         raise ValueError(
-            "Backup offsite plaintext ditolak. Atur FINANCE_BACKUP_AGE_RECIPIENT atau ALLOW_PLAINTEXT_FINANCE_BACKUP=1."
+            "Plaintext offsite backup refused. Set FINANCE_BACKUP_AGE_RECIPIENT or ALLOW_PLAINTEXT_FINANCE_BACKUP=1."
         )
 
     destination = remote.rstrip("/") + "/" + upload_source.name
@@ -139,7 +139,7 @@ def backup_offsite(keep: int = 30) -> dict[str, Any]:
     conn.commit()
     conn.close()
     if result.returncode != 0:
-        raise ValueError(f"Upload offsite gagal: {result.stderr.strip()}")
+        raise ValueError(f"Offsite upload failed: {result.stderr.strip()}")
     if encrypted:
         upload_source.unlink(missing_ok=True)
     return {
@@ -152,10 +152,10 @@ def backup_offsite(keep: int = 30) -> dict[str, Any]:
 
 def restore_backup(archive_path: str, confirm: str) -> dict[str, Any]:
     if confirm != "RESTORE":
-        raise ValueError("Restore memerlukan --confirm RESTORE.")
+        raise ValueError("Restore requires --confirm RESTORE.")
     source = Path(archive_path).expanduser().resolve()
     if not source.exists() or not source.is_file():
-        raise ValueError(f"Arsip backup tidak ditemukan: {source}")
+        raise ValueError(f"Backup archive not found: {source}")
 
     safety = backup_local()
     with tempfile.TemporaryDirectory(prefix="cali-finance-restore-") as tmp:
@@ -164,12 +164,12 @@ def restore_backup(archive_path: str, confirm: str) -> dict[str, Any]:
             archive.extractall(destination, members=_safe_tar_members(archive, destination))
         restored_db = destination / "finance.db"
         if not restored_db.exists():
-            raise ValueError("Arsip tidak berisi finance.db.")
+            raise ValueError("The archive does not contain finance.db.")
         check_conn = sqlite3.connect(restored_db)
         integrity = check_conn.execute("PRAGMA integrity_check").fetchone()[0]
         check_conn.close()
         if integrity != "ok":
-            raise ValueError(f"Database dalam backup rusak: {integrity}")
+            raise ValueError(f"The database in the backup is corrupt: {integrity}")
 
         replacement = DB_PATH.with_suffix(".db.restore")
         shutil.copy2(restored_db, replacement)
@@ -192,7 +192,7 @@ def restore_backup(archive_path: str, confirm: str) -> dict[str, Any]:
         "safety_backup": safety["path"],
         "database": str(DB_PATH),
         "receipt_count": receipt_count,
-        "warning": "Restart Hermes gateway sebelum menggunakan skill lagi.",
+        "warning": "Restart the Hermes gateway before using the skill again.",
     }
 
 

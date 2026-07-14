@@ -2,8 +2,11 @@
 from __future__ import annotations
 
 import os
+import sys
 import tempfile
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 ROOT = Path(tempfile.mkdtemp(prefix="cali-finance-restore-"))
 os.environ["HERMES_HOME"] = str(ROOT / ".hermes")
@@ -18,16 +21,16 @@ add_transaction(
     tx_type="expense",
     amount_raw="10000",
     wallet_name="Cash",
-    category_name="Makan",
-    description="Transaksi sebelum backup",
+    category_name="Food",
+    description="Transaction before backup",
 )
 backup = backup_local()
 add_transaction(
     tx_type="expense",
     amount_raw="20000",
     wallet_name="Cash",
-    category_name="Makan",
-    description="Transaksi setelah backup",
+    category_name="Food",
+    description="Transaction after backup",
 )
 assert len(recent_transactions()) == 2
 result = restore_backup(backup["path"], "RESTORE")

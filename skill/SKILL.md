@@ -1,6 +1,6 @@
 ---
 name: personal-finance
-description: Catat, audit, dan rangkum keuangan pribadi dengan dompet, budget, tagihan, utang, piutang, target tabungan, CSV, dan struk.
+description: Record, audit, and summarize personal finances with wallets, budgets, bills, debts, receivables, savings goals, CSV files, and receipts.
 version: 1.0.0
 author: Cali Finance Project
 license: MIT
@@ -14,61 +14,60 @@ metadata:
 
 # Cali Personal Finance
 
-Gunakan skill ini untuk semua pekerjaan keuangan pribadi: transaksi, saldo,
-budget, tagihan belum dibayar, utang, piutang, target tabungan, laporan,
-rekonsiliasi, import CSV, dan struk.
+Use this skill for all personal finance work: transactions, balances, budgets,
+unpaid bills, debts, receivables, savings goals, reports, reconciliation, CSV
+imports, and receipts.
 
-CLI yang wajib digunakan:
+Always use this CLI:
 
 ```bash
 ${HERMES_SKILL_DIR}/scripts/finance.sh COMMAND ...
 ```
 
-Database SQLite lokal adalah satu-satunya sumber kebenaran. Jangan menganggap
-pesan chat, memory, Markdown, atau jawaban model sebagai transaksi yang sudah
-tercatat.
+The local SQLite database is the only source of truth. Never treat chat
+messages, memory, Markdown, or model output as recorded transactions.
 
-## Aturan yang Tidak Boleh Dilanggar
+## Non-Negotiable Rules
 
-1. Jangan pernah mengarang nominal, tanggal, kategori, dompet, saldo, atau hasil.
-2. Jangan mengatakan “tercatat”, “lunas”, atau “berhasil” sebelum CLI
-   mengembalikan `"ok": true`.
-3. Pengeluaran/pemasukan minimum membutuhkan nominal, kategori, dompet,
-   deskripsi, dan tanggal. Tanggal default adalah sekarang di Asia/Jakarta.
-4. Kategori boleh diinferensikan hanya jika jelas. Bila ambigu, tanyakan.
-5. Dompet yang tidak disebutkan harus ditanyakan. Jangan otomatis memilih Cash.
-6. Simpan ucapan asli pengguna melalui `--raw-input` bila command mendukungnya.
-7. Jangan menulis SQL langsung. Selalu gunakan command tervalidasi.
-8. Transfer antar-dompet bukan pengeluaran atau pemasukan.
-9. Pembayaran pokok utang bukan pengeluaran konsumsi. Penagihan piutang bukan
-   pemasukan usaha. CLI memisahkan arus pembiayaan tersebut.
-10. Target tabungan adalah alokasi virtual; saldo dompet tidak berubah kecuali
-    pengguna juga mencatat transfer nyata.
-11. Untuk aksi berisiko, gunakan preview lalu minta konfirmasi:
-    - dugaan transaksi duplikat;
-    - penyesuaian hasil rekonsiliasi;
-    - commit import CSV;
-    - konfirmasi hasil OCR struk;
-    - pembatalan transaksi, tagihan, atau utang.
-12. Jangan kirim database atau rincian sensitif ke web/API eksternal tanpa
-    permintaan eksplisit.
+1. Never invent an amount, date, category, wallet, balance, or result.
+2. Never say "recorded," "paid," or "successful" before the CLI returns
+   `"ok": true`.
+3. Expenses and income require an amount, category, wallet, description, and
+   date. The default date is the current date in Asia/Jakarta.
+4. Infer a category only when it is clear. Ask when it is ambiguous.
+5. Ask for an omitted wallet. Never choose Cash automatically.
+6. Preserve the user's original wording with `--raw-input` when supported.
+7. Never write SQL directly. Always use validated commands.
+8. Transfers between wallets are not expenses or income.
+9. Debt principal repayments are not consumer expenses. Receivable collections
+   are not business income. The CLI tracks these financing flows separately.
+10. Savings goals are virtual allocations; wallet balances change only when the
+    user also records a real transfer.
+11. Preview and request confirmation for risky actions:
+    - suspected duplicate transactions;
+    - reconciliation adjustments;
+    - CSV import commits;
+    - OCR receipt confirmations;
+    - voiding transactions or cancelling bills/debts.
+12. Never send the database or sensitive financial details to external web/API
+    services without an explicit request.
 
-## Pencatatan Transaksi
+## Record Transactions
 
-Pengeluaran:
+Expense:
 
 ```bash
 ${HERMES_SKILL_DIR}/scripts/finance.sh add \
   --type expense \
   --amount 25000 \
-  --category "Makan" \
+  --category "Food" \
   --wallet "Cash" \
-  --description "Makan bakso" \
+  --description "Meatball soup" \
   --date "2026-07-14" \
-  --raw-input "tadi makan bakso 25 ribu cash"
+  --raw-input "I had Rp25,000 meatball soup for lunch, paid in cash"
 ```
 
-Pemasukan:
+Income:
 
 ```bash
 ${HERMES_SKILL_DIR}/scripts/finance.sh add \
@@ -76,28 +75,27 @@ ${HERMES_SKILL_DIR}/scripts/finance.sh add \
   --amount 750000 \
   --category "Freelance" \
   --wallet "BCA" \
-  --description "Pembayaran proyek" \
-  --raw-input "freelance masuk 750 ribu ke BCA"
+  --description "Project payment" \
+  --raw-input "Rp750,000 freelance payment arrived in BCA"
 ```
 
-Jika hasil berisi `code: possible_duplicate`, tampilkan kandidatnya dan tanyakan
-apakah transaksi memang baru. Hanya setelah pengguna mengonfirmasi, ulangi
-command dengan `--force-duplicate`.
+If the result contains `code: possible_duplicate`, show the candidates and ask
+whether this is a new transaction. Use `--force-duplicate` only after explicit
+confirmation.
 
-Konfirmasi sukses harus ringkas:
+Keep a successful confirmation concise:
 
 ```text
-Tercatat #ID: Rp... — deskripsi
-Kategori: ...
-Dompet: ...
-Tanggal: ...
-Saldo dompet: ...
+Recorded #ID: Rp... — description
+Category: ...
+Wallet: ...
+Date: ...
+Wallet balance: ...
 ```
 
-Boleh menambahkan satu komentar Cali yang ringan, tetapi angka dan status harus
-tetap menjadi fokus.
+One light Cali remark is allowed, but amounts and status remain the focus.
 
-## Transfer dan Dompet
+## Transfers and Wallets
 
 ```bash
 ${HERMES_SKILL_DIR}/scripts/finance.sh transfer \
@@ -105,7 +103,7 @@ ${HERMES_SKILL_DIR}/scripts/finance.sh transfer \
   --description "Top up GoPay"
 ```
 
-Lihat atau tambah dompet:
+List or add wallets:
 
 ```bash
 ${HERMES_SKILL_DIR}/scripts/finance.sh wallets
@@ -113,100 +111,97 @@ ${HERMES_SKILL_DIR}/scripts/finance.sh wallet-add \
   --name "DANA" --kind ewallet --opening-balance 50000
 ```
 
-Saldo awal hanya untuk kondisi saat mulai memakai sistem, bukan untuk koreksi
-saldo harian.
+Opening balances are only for onboarding, not daily balance corrections.
 
-## Rekonsiliasi Saldo
+## Balance Reconciliation
 
-Selalu preview dahulu:
+Always preview first:
 
 ```bash
 ${HERMES_SKILL_DIR}/scripts/finance.sh reconcile \
   --wallet "GoPay" --actual-balance 142500
 ```
 
-Jika ada selisih, jelaskan saldo tercatat, saldo aktual, dan selisihnya. Tanyakan
-apakah pengguna ingin mencari transaksi yang hilang atau membuat penyesuaian.
-Hanya setelah persetujuan eksplisit:
+When there is a difference, explain the recorded balance, actual balance, and
+difference. Ask whether to find the missing transaction or create an
+adjustment. Only after explicit approval:
 
 ```bash
 ${HERMES_SKILL_DIR}/scripts/finance.sh reconcile-adjust \
-  --check-id ID --reason "Transaksi lama tidak tercatat" \
+  --check-id ID --reason "An older transaction was not recorded" \
   --confirm-adjust YES
 ```
 
-## Budget
+## Budgets
 
 ```bash
 ${HERMES_SKILL_DIR}/scripts/finance.sh budget-set \
-  --category "Makan" --limit 800000 --period month
+  --category "Food" --limit 800000 --period month
 ${HERMES_SKILL_DIR}/scripts/finance.sh budgets
 ```
 
-Setelah mencatat pengeluaran, periksa `budget_warnings`. Beri peringatan ringan
-pada 70%, tegas pada 90%, dan serius jika 100% atau lebih. Jangan menghakimi.
+After recording an expense, check `budget_warnings`. Give a light warning at
+70%, a firm warning at 90%, and a serious warning at 100% or more. Do not judge.
 
-## Tagihan Belum Dibayar
+## Unpaid Bills
 
-Mencatat tagihan tidak langsung membuat transaksi pengeluaran:
+Recording a bill does not immediately create an expense:
 
 ```bash
 ${HERMES_SKILL_DIR}/scripts/finance.sh bill-add \
-  --name "Internet Juli" --amount 275000 \
-  --due-date 2026-07-15 --category Tagihan --wallet BCA
+  --name "July internet" --amount 275000 \
+  --due-date 2026-07-15 --category Bills --wallet BCA
 ```
 
-Ketika benar-benar dibayar:
+When it is actually paid:
 
 ```bash
 ${HERMES_SKILL_DIR}/scripts/finance.sh obligation-pay \
   --id ID --amount 275000 --wallet BCA
 ```
 
-Pembayaran parsial didukung. Tampilkan sisa dan status setelah pembayaran.
+Partial payments are supported. Show the remainder and status after payment.
 
-## Utang dan Piutang
+## Debts and Receivables
 
-`payable` berarti pengguna berutang. `receivable` berarti orang lain berutang
-kepada pengguna.
+`payable` means the user owes another party. `receivable` means another party
+owes the user.
 
-Utang tanpa pencatatan dana masuk:
+Debt without recording incoming funds:
 
 ```bash
 ${HERMES_SKILL_DIR}/scripts/finance.sh debt-add \
-  --direction payable --name "Utang ke Umar" \
+  --direction payable --name "Debt to Umar" \
   --counterparty Umar --amount 500000 --due-date 2026-08-01
 ```
 
-Jika uang pinjaman benar-benar masuk ke dompet yang dilacak, tambahkan
-`--cash-wallet BCA`. Untuk piutang, `--cash-wallet Cash` berarti uang keluar dari
-Cash saat dipinjamkan.
+If borrowed money really enters a tracked wallet, add `--cash-wallet BCA`. For
+a receivable, `--cash-wallet Cash` means money left Cash when it was lent.
 
-Pembayaran utang atau penagihan piutang memakai command yang sama:
+Debt repayment and receivable collection use the same command:
 
 ```bash
 ${HERMES_SKILL_DIR}/scripts/finance.sh obligation-pay \
   --id ID --amount 100000 --wallet BCA
 ```
 
-Lihat daftar:
+List obligations:
 
 ```bash
 ${HERMES_SKILL_DIR}/scripts/finance.sh obligations
 ```
 
-## Tagihan Berulang
+## Recurring Bills
 
 ```bash
 ${HERMES_SKILL_DIR}/scripts/finance.sh recurring-add \
-  --name "Netflix" --amount 65000 --category Langganan \
+  --name "Netflix" --amount 65000 --category Subscriptions \
   --next-due-date 2026-08-07 --frequency monthly --wallet GoPay
 ```
 
-`recurring-run` hanya membuat tagihan belum dibayar. Ia tidak menganggap tagihan
-sudah dibayar.
+`recurring-run` creates unpaid bills only. It never marks them paid.
 
-## Target Tabungan
+## Savings Goals
 
 ```bash
 ${HERMES_SKILL_DIR}/scripts/finance.sh goal-add \
@@ -215,96 +210,95 @@ ${HERMES_SKILL_DIR}/scripts/finance.sh goal-contribute \
   --goal "Laptop" --amount 200000 --wallet BCA
 ```
 
-Selalu jelaskan bahwa kontribusi adalah alokasi virtual. Bila pengguna benar-benar
-memindahkan uang ke rekening khusus, catat transfer terpisah.
+Always explain that contributions are virtual allocations. If the user really
+moves money to a dedicated account, record a separate transfer.
 
-## Laporan dan Pencarian
+## Reports and Search
 
 ```bash
 ${HERMES_SKILL_DIR}/scripts/finance.sh report --period week
 ${HERMES_SKILL_DIR}/scripts/finance.sh report --period month
 ${HERMES_SKILL_DIR}/scripts/finance.sh safe-to-spend
 ${HERMES_SKILL_DIR}/scripts/finance.sh search \
-  --query kopi --from 2026-07-01 --to 2026-07-31 --wallet GoPay
+  --query coffee --from 2026-07-01 --to 2026-07-31 --wallet GoPay
 ```
 
-Laporan harus memprioritaskan total pengeluaran, pemasukan, arus kas operasional,
-perbandingan periode sebelumnya, perubahan kategori, budget, tagihan/utang, dan
-rincian dompet. `safe-to-spend` selalu disebut sebagai perkiraan.
+Prioritize total expenses, income, operating cash flow, previous-period
+comparison, category changes, budgets, bills/debts, and wallet details. Always
+describe `safe-to-spend` as an estimate.
 
-## Import CSV
+## CSV Import
 
-Import wajib melalui preview:
+Imports must start with a preview:
 
 ```bash
 ${HERMES_SKILL_DIR}/scripts/finance.sh import-preview \
-  --file /absolute/path/mutasi.csv --wallet BCA --source "bca-juli"
+  --file /absolute/path/statement.csv --wallet BCA --source "bca-july"
 ```
 
-Tampilkan ringkasan ready, unresolved, duplicate, dan error. Jangan commit jika
-masih ada kategori yang belum jelas. Perbaiki baris:
+Show ready, unresolved, duplicate, and error counts. Do not commit while a
+category remains unclear. Fix a row with:
 
 ```bash
 ${HERMES_SKILL_DIR}/scripts/finance.sh import-row-set \
-  --row-id ID --type expense --category "Lainnya"
+  --row-id ID --type expense --category "Other"
 ```
 
-Gunakan `Lainnya` hanya setelah pengguna menyetujuinya. Commit baru dilakukan
-setelah konfirmasi:
+Use `Other` only with the user's approval. Commit after confirmation:
 
 ```bash
 ${HERMES_SKILL_DIR}/scripts/finance.sh import-commit --batch-id ID
 ```
 
-## Struk dari Telegram
+## Telegram Receipts
 
-Jika Telegram menyediakan path file attachment, lakukan preview lokal:
+When Telegram provides an attachment path, preview it locally:
 
 ```bash
 ${HERMES_SKILL_DIR}/scripts/finance.sh receipt-scan \
   --file /absolute/path/receipt.jpg --wallet GoPay --ocr
 ```
 
-OCR tidak boleh langsung disimpan sebagai transaksi. Tampilkan merchant,
-nominal, tanggal, kategori, dan dompet yang terbaca, lalu minta pengguna
-memeriksa. Setelah disetujui:
+Never save OCR output directly as a transaction. Show the detected merchant,
+amount, date, category, and wallet, then ask the user to review them. After
+approval:
 
 ```bash
 ${HERMES_SKILL_DIR}/scripts/finance.sh receipt-confirm \
-  --id ID --wallet GoPay --category Makan \
-  --description "Belanja dari struk" --amount 74500 --date 2026-07-14
+  --id ID --wallet GoPay --category Food \
+  --description "Purchase from receipt" --amount 74500 --date 2026-07-14
 ```
 
-Jika OCR tidak tersedia atau hasilnya buram, minta nominal/data manual. Jangan
-pura-pura bisa membaca gambar.
+Ask for manual data when OCR is unavailable or unclear. Never pretend to read
+an image.
 
-## Koreksi
+## Corrections
 
-Lihat transaksi lalu batalkan berdasarkan ID:
+List transactions, then void by ID:
 
 ```bash
 ${HERMES_SKILL_DIR}/scripts/finance.sh list --limit 20
 ${HERMES_SKILL_DIR}/scripts/finance.sh void \
-  --id ID --reason "Nominal salah; diganti transaksi baru"
+  --id ID --reason "Wrong amount; replaced by a new transaction"
 ```
 
-Jangan mengedit histori secara langsung. Setelah void, buat transaksi pengganti.
+Never edit history directly. Create a replacement transaction after voiding.
 
-## Mode Serius
+## Serious Mode
 
-Hentikan candaan bila hasil `alerts` atau `health` menunjukkan:
+Stop joking when `alerts` or `health` reports:
 
-- database tidak sehat;
-- saldo negatif yang tidak diharapkan;
-- tagihan/utang lewat jatuh tempo bernilai besar;
-- backup gagal atau terlalu lama;
-- import massal bermasalah;
-- potensi kehilangan atau kerusakan data.
+- an unhealthy database;
+- an unexpected negative balance;
+- a large overdue bill/debt;
+- a failed or stale backup;
+- a problematic bulk import;
+- possible data loss or corruption.
 
-Pada kondisi serius, sebutkan apa yang gagal, dampaknya, dan langkah konkret
-berikutnya. Jangan menutupi masalah dengan personality.
+State what failed, its impact, and the next concrete action. Never hide a
+serious problem behind personality.
 
-## Verifikasi
+## Verification
 
 ```bash
 ${HERMES_SKILL_DIR}/scripts/finance.sh health
@@ -313,9 +307,9 @@ ${HERMES_SKILL_DIR}/scripts/finance.sh obligations
 ${HERMES_SKILL_DIR}/scripts/finance.sh backup
 ```
 
-Restore hanya dilakukan atas permintaan eksplisit, setelah gateway dihentikan dan
-pengguna menyebut arsip yang benar. Gunakan `restore --confirm RESTORE`; jangan
-menjalankannya sebagai tindakan otomatis atau berdasarkan asumsi.
+Restore only after an explicit request, once the gateway is stopped and the
+user identifies the correct archive. Use `restore --confirm RESTORE`; never run
+it automatically or from an assumption.
 
-Jika sebuah command mengembalikan `"ok": false`, sampaikan kegagalannya dan
-jangan mengklaim tindakan selesai.
+If a command returns `"ok": false`, report the failure and do not claim the
+action completed.

@@ -53,7 +53,7 @@ def obligation_add(
     date_raw: str | None = None,
 ) -> dict[str, Any]:
     if kind not in {"bill", "debt_payable", "debt_receivable"}:
-        raise ValueError("Jenis kewajiban tidak valid.")
+        raise ValueError("Invalid obligation type.")
     amount = parse_amount(amount_raw)
     conn = connect()
     category_id = None
@@ -61,7 +61,7 @@ def obligation_add(
     if kind == "bill":
         if not category_name:
             conn.close()
-            raise ValueError("Tagihan wajib memiliki kategori pengeluaran.")
+            raise ValueError("Bills require an expense category.")
         category = resolve_category(conn, category_name, "expense")
         category_id = category["id"]
         category_label = category["name"]
@@ -109,13 +109,13 @@ def obligation_add(
         occurred_at = parse_occurrence(date_raw)
         if kind == "debt_payable":
             tx_type = "debt_draw"
-            description = f"Dana utang diterima: {name.strip()}"
+            description = f"Debt funds received: {name.strip()}"
         elif kind == "debt_receivable":
             tx_type = "loan_given"
-            description = f"Uang dipinjamkan: {name.strip()}"
+            description = f"Money lent: {name.strip()}"
         else:
             conn.close()
-            raise ValueError("cash-wallet hanya berlaku untuk utang/piutang, bukan tagihan.")
+            raise ValueError("cash-wallet applies only to debts/receivables, not bills.")
         cash_transaction_id = create_transaction(
             conn,
             tx_type=tx_type,
@@ -168,28 +168,28 @@ def obligation_pay(
     ).fetchone()
     if not row:
         conn.close()
-        raise ValueError(f"Tagihan/utang #{obligation_id} tidak ditemukan.")
+        raise ValueError(f"Bill/debt #{obligation_id} not found.")
     if row["status"] in {"paid", "cancelled"}:
         conn.close()
-        raise ValueError("Tagihan/utang ini sudah ditutup.")
+        raise ValueError("This bill/debt has already been closed.")
     amount = parse_amount(amount_raw)
     if amount > row["remaining_amount"]:
         conn.close()
-        raise ValueError("Pembayaran melebihi sisa kewajiban/piutang.")
+        raise ValueError("Payment exceeds the remaining obligation/receivable.")
     wallet = resolve_wallet(conn, wallet_name)
     occurred_at = parse_occurrence(date_raw)
     if row["kind"] == "bill":
         tx_type = "expense"
         category_id = row["category_id"]
-        description = f"Bayar tagihan: {row['name']}"
+        description = f"Bill payment: {row['name']}"
     elif row["kind"] == "debt_payable":
         tx_type = "debt_repayment"
         category_id = None
-        description = f"Bayar utang: {row['name']}"
+        description = f"Debt repayment: {row['name']}"
     else:
         tx_type = "loan_collection"
         category_id = None
-        description = f"Terima pembayaran piutang: {row['name']}"
+        description = f"Receivable payment received: {row['name']}"
     tx_id = create_transaction(
         conn,
         tx_type=tx_type,
@@ -286,10 +286,10 @@ def obligation_cancel(obligation_id: int, reason: str) -> dict[str, Any]:
     row = conn.execute("SELECT status FROM obligations WHERE id=?", (obligation_id,)).fetchone()
     if not row:
         conn.close()
-        raise ValueError(f"Tagihan/utang #{obligation_id} tidak ditemukan.")
+        raise ValueError(f"Bill/debt #{obligation_id} not found.")
     if row["status"] == "paid":
         conn.close()
-        raise ValueError("Kewajiban yang sudah lunas tidak dapat dibatalkan.")
+        raise ValueError("A paid obligation cannot be cancelled.")
     now = datetime.now(TZ).isoformat(timespec="seconds")
     conn.execute(
         "UPDATE obligations SET status='cancelled',closed_at=?,note=COALESCE(note,'') || ? WHERE id=?",
@@ -315,7 +315,7 @@ def _advance_due(current: date, frequency: str, interval_count: int) -> date:
         return _add_months(current, interval_count)
     if frequency == "yearly":
         return _add_months(current, 12 * interval_count)
-    raise ValueError("Frekuensi tidak valid.")
+    raise ValueError("Invalid frequency.")
 
 
 def recurring_add(
@@ -330,9 +330,9 @@ def recurring_add(
     note: str | None = None,
 ) -> dict[str, Any]:
     if frequency not in {"weekly", "monthly", "yearly"}:
-        raise ValueError("Frekuensi harus weekly, monthly, atau yearly.")
+        raise ValueError("Frequency must be weekly, monthly, or yearly.")
     if interval_count <= 0:
-        raise ValueError("Interval harus lebih dari 0.")
+        raise ValueError("Interval must be greater than 0.")
     date.fromisoformat(next_due_date)
     amount = parse_amount(amount_raw)
     conn = connect()
@@ -467,7 +467,7 @@ def recurring_pause(rule_id: int, active: bool) -> dict[str, Any]:
     cursor = conn.execute("UPDATE recurring_rules SET active=? WHERE id=?", (1 if active else 0, rule_id))
     if cursor.rowcount == 0:
         conn.close()
-        raise ValueError(f"Aturan berulang #{rule_id} tidak ditemukan.")
+        raise ValueError(f"Recurring rule #{rule_id} not found.")
     conn.commit()
     conn.close()
     return {"ok": True, "rule_id": rule_id, "active": active}

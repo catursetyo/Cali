@@ -28,7 +28,7 @@ def period_bounds(period_type: str, anchor: date) -> tuple[date, date]:
         return month_bounds(anchor)
     if period_type == "week":
         return week_bounds(anchor)
-    raise ValueError("Period budget harus month atau week.")
+    raise ValueError("Budget period must be month or week.")
 
 
 def budget_set(
@@ -40,7 +40,7 @@ def budget_set(
 ) -> dict[str, Any]:
     conn = connect()
     category_id = None
-    category_label = "Semua kategori"
+    category_label = "All categories"
     if category_name:
         category = resolve_category(conn, category_name, "expense")
         category_id = category["id"]
@@ -159,7 +159,7 @@ def budget_status(
         result.append(
             {
                 "budget_id": row["id"],
-                "category": row["category_name"] or "Semua kategori",
+                "category": row["category_name"] or "All categories",
                 "period_type": row["period_type"],
                 "start": row["start_date"],
                 "end_exclusive": row["end_date"],
@@ -184,7 +184,7 @@ def budget_cancel(budget_id: int) -> dict[str, Any]:
     cursor = conn.execute("UPDATE budgets SET active=0 WHERE id=?", (budget_id,))
     if cursor.rowcount == 0:
         conn.close()
-        raise ValueError(f"Budget #{budget_id} tidak ditemukan.")
+        raise ValueError(f"Budget #{budget_id} not found.")
     conn.commit()
     conn.close()
     return {"ok": True, "budget_id": budget_id, "active": False}

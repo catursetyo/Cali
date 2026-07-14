@@ -26,7 +26,7 @@ def _run_tesseract(path: Path) -> str:
     binary = shutil.which("tesseract")
     if not binary:
         raise ValueError(
-            "Tesseract belum terpasang. Jalankan install-ocr.sh atau isi data struk secara manual."
+            "Tesseract is not installed. Run install-ocr.sh or enter the receipt data manually."
         )
     languages = "ind+eng"
     result = subprocess.run(
@@ -46,7 +46,7 @@ def _run_tesseract(path: Path) -> str:
             check=False,
         )
     if result.returncode != 0:
-        raise ValueError(f"OCR gagal: {result.stderr.strip() or 'unknown error'}")
+        raise ValueError(f"OCR failed: {result.stderr.strip() or 'unknown error'}")
     return result.stdout.strip()
 
 
@@ -111,9 +111,9 @@ def receipt_scan(
 ) -> dict[str, Any]:
     source = Path(file_path).expanduser().resolve()
     if not source.exists() or not source.is_file():
-        raise ValueError(f"File struk tidak ditemukan: {source}")
+        raise ValueError(f"Receipt file not found: {source}")
     if source.suffix.lower() not in {".png", ".jpg", ".jpeg", ".webp", ".tif", ".tiff"}:
-        raise ValueError("Format struk harus PNG, JPG, WEBP, atau TIFF.")
+        raise ValueError("Receipt format must be PNG, JPG, WEBP, or TIFF.")
 
     RECEIPT_DIR.mkdir(parents=True, exist_ok=True)
     digest = _sha256(source)
@@ -121,7 +121,7 @@ def receipt_scan(
     existing = conn.execute("SELECT * FROM receipts WHERE sha256=?", (digest,)).fetchone()
     if existing:
         conn.close()
-        raise ValueError(f"Struk yang sama sudah pernah diproses sebagai receipt #{existing['id']}.")
+        raise ValueError(f"The same receipt was already processed as receipt #{existing['id']}.")
 
     destination = RECEIPT_DIR / f"{digest[:16]}{source.suffix.lower()}"
     shutil.copy2(source, destination)
@@ -198,14 +198,14 @@ def receipt_confirm(
     receipt = conn.execute("SELECT * FROM receipts WHERE id=?", (receipt_id,)).fetchone()
     if not receipt:
         conn.close()
-        raise ValueError(f"Receipt #{receipt_id} tidak ditemukan.")
+        raise ValueError(f"Receipt #{receipt_id} not found.")
     if receipt["status"] != "preview":
         conn.close()
-        raise ValueError("Receipt ini sudah dikomit atau ditolak.")
+        raise ValueError("This receipt has already been committed or rejected.")
     amount = amount_raw if amount_raw is not None else receipt["total_amount"]
     if amount is None:
         conn.close()
-        raise ValueError("Nominal belum terbaca. Sebutkan --amount.")
+        raise ValueError("Amount could not be read. Specify --amount.")
     occurred = date_raw or receipt["occurred_at"]
     conn.close()
 
@@ -257,7 +257,7 @@ def receipt_reject(receipt_id: int, reason: str) -> dict[str, Any]:
     )
     if cursor.rowcount == 0:
         conn.close()
-        raise ValueError("Receipt tidak ditemukan atau sudah diproses.")
+        raise ValueError("Receipt not found or already processed.")
     conn.commit()
     conn.close()
     return {"ok": True, "receipt_id": receipt_id, "status": "rejected"}

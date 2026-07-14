@@ -23,13 +23,13 @@ def set_setting(key: str, value: str) -> dict:
         "due_soon_days",
     }
     if key not in allowed:
-        raise ValueError(f"Setting tidak dikenal: {key}")
+        raise ValueError(f"Unknown setting: {key}")
     if key in {"minimum_reserve", "monthly_savings_target"}:
         value = str(parse_amount(value, allow_zero=True))
     elif key in {"duplicate_window_days", "backup_stale_hours", "due_soon_days"}:
         parsed = int(value)
         if parsed < 0:
-            raise ValueError("Nilai setting tidak boleh negatif.")
+            raise ValueError("Setting value cannot be negative.")
         value = str(parsed)
     now = datetime.now(TZ).isoformat(timespec="seconds")
     conn = connect()

@@ -50,7 +50,7 @@ def alert_data(*, new_only: bool = False, mark_sent: bool = False) -> dict[str, 
 
     integrity = db_integrity()
     if integrity["integrity"] != "ok" or integrity["foreign_key_errors"]:
-        alerts.append({"severity": "critical", "type": "database", "message": "Integritas database bermasalah.", "details": integrity})
+        alerts.append({"severity": "critical", "type": "database", "message": "Database integrity check failed.", "details": integrity})
 
     for wallet in all_wallet_balances(conn):
         if wallet["balance"] < 0:
@@ -58,7 +58,7 @@ def alert_data(*, new_only: bool = False, mark_sent: bool = False) -> dict[str, 
                 {
                     "severity": "critical",
                     "type": "negative_balance",
-                    "message": f"Saldo {wallet['name']} negatif: {wallet['balance_formatted']}",
+                    "message": f"{wallet['name']} has a negative balance: {wallet['balance_formatted']}",
                     "wallet": wallet["name"],
                     "balance": wallet["balance"],
                 }
@@ -70,7 +70,7 @@ def alert_data(*, new_only: bool = False, mark_sent: bool = False) -> dict[str, 
                 {
                     "severity": "critical" if item["remaining_amount"] >= 1_000_000 else "warning",
                     "type": "overdue_obligation",
-                    "message": f"#{item['id']} {item['name']} sudah lewat jatuh tempo; sisa {item['remaining_amount_formatted']}.",
+                    "message": f"#{item['id']} {item['name']} is overdue; {item['remaining_amount_formatted']} remains.",
                     "id": item["id"],
                     "remaining": item["remaining_amount"],
                     "due_date": item["due_date"],
@@ -84,7 +84,7 @@ def alert_data(*, new_only: bool = False, mark_sent: bool = False) -> dict[str, 
                     {
                         "severity": "warning",
                         "type": "due_soon",
-                        "message": f"#{item['id']} {item['name']} jatuh tempo {item['due_date']}; sisa {item['remaining_amount_formatted']}.",
+                        "message": f"#{item['id']} {item['name']} is due on {item['due_date']}; {item['remaining_amount_formatted']} remains.",
                         "id": item["id"],
                         "remaining": item["remaining_amount"],
                         "due_date": item["due_date"],
@@ -98,7 +98,7 @@ def alert_data(*, new_only: bool = False, mark_sent: bool = False) -> dict[str, 
                 {
                     "severity": severity,
                     "type": "budget",
-                    "message": f"Budget {budget['category']} sudah {budget['usage_percent_formatted']} ({budget['spent_formatted']} / {budget['limit_formatted']}).",
+                    "message": f"Budget {budget['category']} is at {budget['usage_percent_formatted']} ({budget['spent_formatted']} / {budget['limit_formatted']}).",
                     "budget_id": budget["budget_id"],
                     "threshold": budget["threshold"],
                     "spent": budget["spent"],
@@ -107,7 +107,7 @@ def alert_data(*, new_only: bool = False, mark_sent: bool = False) -> dict[str, 
 
     backup = last_backup()
     if not backup:
-        alerts.append({"severity": "warning", "type": "backup", "message": "Belum ada backup database keuangan."})
+        alerts.append({"severity": "warning", "type": "backup", "message": "No finance database backup exists yet."})
     else:
         created = datetime.fromisoformat(backup["created_at"])
         age_hours = (datetime.now(TZ) - created.astimezone(TZ)).total_seconds() / 3600
@@ -116,7 +116,7 @@ def alert_data(*, new_only: bool = False, mark_sent: bool = False) -> dict[str, 
                 {
                     "severity": "warning",
                     "type": "backup",
-                    "message": f"Backup terakhir sudah {age_hours:.0f} jam lalu.",
+                    "message": f"The latest backup is {age_hours:.0f} hours old.",
                     "age_hours": round(age_hours, 1),
                     "path": backup["path"],
                 }
@@ -130,7 +130,7 @@ def alert_data(*, new_only: bool = False, mark_sent: bool = False) -> dict[str, 
             {
                 "severity": "info",
                 "type": "pending_import",
-                "message": f"Ada {pending} baris import CSV yang masih perlu ditinjau.",
+                "message": f"{pending} CSV import rows still need review.",
                 "count": pending,
             }
         )
@@ -159,16 +159,16 @@ def alert_text(data: dict[str, Any]) -> str:
     info = [a for a in data["alerts"] if a["severity"] == "info"]
     lines = []
     if critical:
-        lines.append("Ada masalah keuangan yang perlu diperiksa sekarang:")
+        lines.append("Financial issues need attention now:")
         lines.extend(f"- {item['message']}" for item in critical)
     if warning:
         if lines:
             lines.append("")
-        lines.append("Peringatan:")
+        lines.append("Warnings:")
         lines.extend(f"- {item['message']}" for item in warning)
     if info:
         if lines:
             lines.append("")
-        lines.append("Catatan:")
+        lines.append("Notes:")
         lines.extend(f"- {item['message']}" for item in info)
     return "\n".join(lines)

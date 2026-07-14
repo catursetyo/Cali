@@ -1,93 +1,72 @@
 # AGENTS.md
 
-## Tujuan dokumen
+## Purpose
 
-File ini adalah instruksi utama bagi Codex saat membantu mengembangkan, menguji,
-mendokumentasikan, dan memublikasikan **Cali Finance for Hermes Agent**.
+This is the primary instruction file for Codex when developing, testing,
+documenting, and publishing **Cali Finance for Hermes Agent**. Keep it in the
+repository root beside `README.md`, `finance.py`, and `cali_finance/`.
 
-Letakkan file ini di root repository, sejajar dengan `README.md`,
-`finance.py`, dan folder `cali_finance/`.
+If more `AGENTS.md` files are added later, the instructions nearest to the file
+being changed take precedence.
 
-Instruksi yang paling dekat dengan file yang sedang dikerjakan memiliki
-prioritas lebih tinggi bila di masa depan terdapat `AGENTS.md` tambahan di
-subfolder tertentu.
+## Project Summary
 
----
+Cali Finance is a local personal finance ledger for Hermes Agent.
 
-## Ringkasan proyek
+- The AI model understands natural language and selects commands.
+- Python validates input and enforces business rules.
+- SQLite is the source of truth for transactions and history.
+- The Hermes skill explains when and how to use commands.
+- Telegram is only the conversational interface.
+- An Azure VM is the deployment runtime.
+- GitHub stores only source code, documentation, and sanitized examples.
 
-Cali Finance adalah personal finance ledger lokal untuk Hermes Agent.
+This project is not business accounting software, a tax application,
+investment advice, direct bank-login synchronization, or a place to store user
+financial data on GitHub.
 
-Pembagian tanggung jawabnya:
+## Priorities
 
-- Model AI memahami bahasa natural dan memilih command.
-- Python memvalidasi input dan menjalankan business rules.
-- SQLite menjadi sumber kebenaran untuk transaksi dan histori.
-- Hermes skill menjelaskan kapan serta bagaimana command digunakan.
-- Telegram hanya menjadi antarmuka percakapan.
-- Azure VM menjadi runtime deployment.
-- GitHub hanya menyimpan source code, dokumentasi, dan contoh yang sudah
-  disanitasi.
+Use this order when making technical decisions:
 
-Proyek ini **bukan**:
+1. Financial data integrity.
+2. Security and privacy.
+3. Backward compatibility and safe migrations.
+4. Deterministic, testable behavior.
+5. Maintainability.
+6. Hermes/Telegram user experience.
+7. New features and convenience.
 
-- aplikasi akuntansi bisnis;
-- aplikasi pajak;
-- penasihat investasi;
-- sinkronisasi login bank langsung;
-- tempat menyimpan data finansial pengguna di GitHub.
+Never sacrifice the first five priorities for UI, personality, or attractive
+features.
 
----
+## Non-Negotiable Rules
 
-## Prioritas utama
+### Never put sensitive data in the repository
 
-Urutan prioritas ketika mengambil keputusan teknis:
-
-1. Integritas data keuangan.
-2. Keamanan dan privasi.
-3. Backward compatibility dan migrasi yang aman.
-4. Perilaku yang deterministik dan dapat diuji.
-5. Kemudahan pemeliharaan.
-6. Pengalaman penggunaan Hermes/Telegram.
-7. Fitur baru dan kenyamanan.
-
-Jangan mengorbankan lima prioritas pertama demi UI, personality, atau fitur yang
-terlihat menarik.
-
----
-
-## Aturan yang tidak boleh dilanggar
-
-### Jangan pernah memasukkan data sensitif ke repository
-
-Jangan membaca, menyalin, membuat fixture dari, atau melakukan commit terhadap:
+Do not read, copy, create fixtures from, or commit:
 
 - `~/.hermes/finance/finance.db`;
-- file `*.db`, `*.sqlite`, `*.sqlite3`, WAL, atau SHM;
-- backup database;
-- foto struk asli;
-- mutasi rekening asli;
-- export transaksi asli;
-- `~/.hermes/.env`;
-- `~/.hermes/state.db`;
-- token Telegram;
-- token Nous Portal;
-- API key model;
-- credential Azure;
-- GitHub token;
-- private SSH key;
-- private `age` key;
+- `*.db`, `*.sqlite`, `*.sqlite3`, WAL, or SHM files;
+- database backups;
+- real receipt images;
+- real bank statements or transaction exports;
+- `~/.hermes/.env` or `~/.hermes/state.db`;
+- Telegram or Nous Portal tokens;
+- model API keys;
+- Azure credentials;
+- GitHub tokens;
+- private SSH or `age` keys;
 - `rclone.conf`;
-- SAS token atau storage account key;
-- informasi rekening, nomor kartu, PIN, atau password.
+- SAS tokens or storage account keys;
+- account/card numbers, PINs, or passwords.
 
-Gunakan data sintetis untuk test, contoh, dokumentasi, screenshot, dan issue.
+Use synthetic data in tests, examples, documentation, screenshots, and issues.
 
-### Jangan mengubah runtime Azure sebagai efek samping
+### Never mutate the Azure runtime as a side effect
 
-Repository lokal adalah source of truth untuk source code.
-
-Jangan mengedit file yang terpasang di:
+The local repository is the source of truth. Do not develop primarily by
+editing installed files in:
 
 ```text
 ~/.hermes/finance/
@@ -95,59 +74,43 @@ Jangan mengedit file yang terpasang di:
 ~/.hermes/scripts/
 ```
 
-sebagai cara utama mengembangkan fitur. Edit source repository, jalankan test,
-commit, lalu deploy melalui `install.sh`.
+Edit the repository, test, commit, then deploy through `install.sh`. Never run
+SSH, `scp`, Azure deployment, gateway restarts, or remote commands unless the
+user explicitly requests them.
 
-Jangan menjalankan SSH, `scp`, deployment Azure, restart gateway, atau command
-remote kecuali pengguna memintanya secara eksplisit.
+### Never perform destructive Git operations
 
-### Jangan melakukan operasi Git destruktif
-
-Tanpa instruksi eksplisit pengguna, jangan:
+Without explicit instructions, do not:
 
 - `git push`;
-- membuat repository GitHub;
-- membuat release atau tag;
-- mengubah visibility repository;
-- menghapus branch;
-- melakukan force push;
-- `git reset --hard`;
-- `git clean -fd`;
+- create a GitHub repository, release, or tag;
+- change repository visibility;
+- delete branches or remotes;
+- force-push;
+- run `git reset --hard` or `git clean -fd`;
 - rewrite history;
-- menghapus remote;
-- menghapus file pengguna yang tidak terkait.
+- delete unrelated user files.
 
-Jangan pernah force-push ke `main`.
+Never force-push `main`.
 
-### Jangan mengklaim sesuatu berhasil tanpa bukti
+### Never claim success without evidence
 
-Sebuah perubahan dianggap berhasil hanya bila:
+A change succeeds only when the relevant command exits with code `0`, relevant
+tests pass, output is inspected, and `git diff` contains no unintended changes.
+If a test cannot run, explain why honestly.
 
-- command selesai dengan exit code `0`;
-- test yang relevan lulus;
-- output diperiksa;
-- tidak ada perubahan tak sengaja pada `git diff`.
+## Language and Communication
 
-Jika test tidak dapat dijalankan, jelaskan penyebabnya secara jujur.
+- Communicate with users in English unless asked otherwise.
+- Be direct and not overly formal.
+- Use English for source code, identifiers, commit messages, API/CLI options,
+  and user documentation.
+- Do not hide risks or failures behind optimistic wording.
+- End tasks with changed files, tests run, and remaining risks.
 
----
+## Repository Map
 
-## Bahasa dan komunikasi
-
-- Berkomunikasi dengan pengguna dalam bahasa Indonesia kecuali diminta lain.
-- Gunakan bahasa yang lugas dan tidak terlalu formal.
-- Source code, identifier, commit message, dan API/CLI option menggunakan
-  bahasa Inggris.
-- Dokumentasi pengguna boleh berbahasa Indonesia.
-- Jangan menutupi risiko atau kegagalan dengan bahasa optimistis.
-- Tampilkan ringkasan perubahan, file yang diubah, test yang dijalankan, dan
-  risiko tersisa pada akhir tugas.
-
----
-
-## Peta repository
-
-Struktur utama yang diharapkan:
+Expected structure:
 
 ```text
 .
@@ -159,9 +122,7 @@ Struktur utama yang diharapkan:
 ├── .env.example
 ├── .gitattributes
 ├── .gitignore
-├── .github/
-│   └── workflows/
-│       └── test.yml
+├── .github/workflows/test.yml
 ├── cali_finance/
 │   ├── __init__.py
 │   ├── alerts.py
@@ -179,8 +140,7 @@ Struktur utama yang diharapkan:
 │   ├── receipts.py
 │   ├── reports.py
 │   └── settings.py
-├── examples/
-│   └── SOUL.example.md
+├── examples/SOUL.example.md
 ├── finance.py
 ├── install.sh
 ├── install-ocr.sh
@@ -195,361 +155,227 @@ Struktur utama yang diharapkan:
 └── uninstall.sh
 ```
 
-Jangan memindahkan file tanpa alasan kuat. Perubahan struktur harus memperbarui
-installer, test, README, skill, dan workflow CI yang terdampak.
+Do not move files without a strong reason. Structural changes must update all
+affected installers, tests, README sections, skill instructions, and CI jobs.
 
----
+## Module Responsibilities
 
-## Tanggung jawab setiap modul
+- `cli.py`: argument parsing, command routing, and output serialization.
+- `db.py`: schema, connections, migrations, integrity checks, transactions.
+- `ledger.py`: transactions, wallets, categories, reconciliation, search, void.
+- `money.py`: amount parsing and formatting.
+- `budgets.py`: budgets and thresholds.
+- `obligations.py`: bills, debts, receivables, payments, recurring obligations.
+- `goals.py`: virtual savings goals.
+- `reports.py`: report aggregation and safe-to-spend.
+- `imports.py`: preview, row review, commit, deduplication, CSV export.
+- `receipts.py`: OCR preview and receipt confirmation.
+- `backup.py`: backup, restore, offsite backup, and retention.
+- `alerts.py`: alert data and text output.
+- `dashboard.py`: static dashboard from aggregated data.
+- `settings.py`: stored configuration.
+- `skill/SKILL.md`: Hermes usage instructions, never business logic.
+- `scripts/`: non-interactive cron wrappers.
+- `tests/`: synthetic data and isolated `HERMES_HOME` values.
 
-Jaga batas tanggung jawab berikut:
+Business rules must live in Python so they can be tested, not only in prompts
+or `skill/SKILL.md`.
 
-- `cli.py`: parsing argument, routing command, dan serialisasi output.
-- `db.py`: schema, koneksi, migrasi, integrity check, dan transaction boundary.
-- `ledger.py`: transaksi, dompet, kategori, rekonsiliasi, pencarian, dan void.
-- `money.py`: parsing serta formatting nominal.
-- `budgets.py`: budget dan threshold.
-- `obligations.py`: tagihan, utang, piutang, pembayaran, dan recurring obligation.
-- `goals.py`: target tabungan virtual.
-- `reports.py`: agregasi laporan dan safe-to-spend.
-- `imports.py`: preview, review, commit, deduplication, dan export CSV.
-- `receipts.py`: OCR preview dan konfirmasi struk.
-- `backup.py`: backup, restore, offsite backup, dan retention.
-- `alerts.py`: alert data serta text output.
-- `dashboard.py`: dashboard statis dari data teragregasi.
-- `settings.py`: konfigurasi yang tersimpan.
-- `skill/SKILL.md`: instruksi penggunaan oleh Hermes, bukan business logic.
-- `scripts/`: wrapper non-interaktif untuk cron.
-- `tests/`: data sintetis dan isolated `HERMES_HOME`.
-
-Business rule tidak boleh hanya hidup di prompt atau `SKILL.md`. Implementasikan
-di Python agar dapat diuji.
-
----
-
-## Prinsip arsitektur
+## Architecture Principles
 
 ### Local-first
 
-Default-nya semua data keuangan tetap lokal di `HERMES_HOME`.
+Financial data stays in `HERMES_HOME` by default. A new feature must not send
+data to web APIs, analytics, telemetry, other models, or external storage
+without an explicit, documented user action.
 
-Fitur baru tidak boleh mengirim data ke:
+### SQLite is the source of truth
 
-- web API;
-- analytics;
-- telemetry;
-- model lain;
-- storage eksternal;
+Chat history, Markdown, memory, dashboards, CSV exports, and model responses are
+not sources of truth. Every financial change must create structured records and
+a clear audit trail.
 
-tanpa tindakan eksplisit dan terdokumentasi dari pengguna.
+### Integer rupiah amounts
 
-### SQLite adalah sumber kebenaran
+- Store amounts as integers, never floats.
+- Abbreviations such as `25rb` or `1,5jt` must parse to integers.
+- Display Indonesian rupiah consistently.
+- Normal transactions use positive amounts; the transaction type determines
+  direction. Negative values are allowed only where the domain requires them.
 
-Jangan menjadikan chat history, Markdown, memory, dashboard, CSV export, atau
-response model sebagai sumber kebenaran.
+### Date and time
 
-Semua perubahan finansial harus menghasilkan record terstruktur dan audit trail
-yang jelas.
-
-### Nominal menggunakan integer rupiah
-
-- Simpan nominal sebagai integer.
-- Jangan gunakan float.
-- Parsing singkatan seperti `25rb` atau `1,5jt` harus menghasilkan integer.
-- Format tampilan menggunakan rupiah Indonesia.
-- Nilai negatif hanya digunakan bila domain memang mengizinkan; transaksi
-  normal harus memiliki amount positif dengan arah ditentukan oleh jenisnya.
-
-### Tanggal dan waktu
-
-- Gunakan timezone `Asia/Jakarta` sebagai default.
-- Simpan datetime timezone-aware.
-- CLI menerima tanggal absolut yang tervalidasi.
-- Resolusi kata seperti “kemarin” dilakukan oleh agent sebelum memanggil CLI,
-  bukan dengan tebakan di layer database.
-- Laporan mingguan menggunakan Senin sampai Minggu kecuali requirement diubah
-  secara eksplisit.
+- Default to `Asia/Jakarta`.
+- Store timezone-aware datetimes.
+- Accept validated absolute dates in the CLI.
+- The agent resolves phrases such as "yesterday" before invoking the CLI.
+- Weekly reports run Monday through Sunday unless requirements explicitly
+  change.
 
 ### Auditability
 
-Hindari update atau delete yang menghilangkan histori.
+Avoid updates or deletes that erase history. Use voids for incorrect
+transactions, adjustments for reconciliation, payment records for settlements,
+statuses for cancellations, and schema versions for migrations.
 
-Gunakan:
+## Financial Domain Rules
 
-- void untuk transaksi salah;
-- adjustment untuk rekonsiliasi;
-- payment record untuk pelunasan;
-- status untuk pembatalan;
-- migration version untuk perubahan schema.
+### Transactions
 
----
+- Expenses and income require a wallet, amount, description, and category.
+- Transfers between wallets are neither expenses nor income.
+- Never guess an omitted wallet or amount.
+- Hermes may infer a category; Python must validate it.
+- Duplicate detection warns instead of silently deleting a possibly valid
+  transaction. Overrides must be explicit.
 
-## Aturan domain keuangan
+### Bills
 
-### Transaksi
+An unpaid bill is an obligation, not an actual expense. Create the expense only
+when a full or partial payment occurs. Bills support due dates, partial
+payments, `open`/`paid`/`overdue`/`cancelled` states, a default wallet,
+category, provider/counterparty, and audited payments.
 
-- Pengeluaran dan pemasukan membutuhkan dompet, nominal, deskripsi, dan kategori.
-- Transfer antar-dompet bukan pengeluaran atau pemasukan.
-- Jangan menebak dompet yang tidak disebutkan.
-- Jangan menebak nominal.
-- Kategori boleh diinferensikan oleh Hermes, tetapi Python tetap memvalidasi
-  kategori yang tersedia.
-- Duplicate detection harus memperingatkan, bukan diam-diam menghapus transaksi
-  yang mungkin valid.
-- Override duplikat harus eksplisit.
+### Debts and receivables
 
-### Tagihan
+- `payable`: the user owes another party.
+- `receivable`: another party owes the user.
+- Borrowed funds increase a wallet without becoming income.
+- Lent funds decrease a wallet without becoming an expense.
+- Principal repayment/collection is not expense/income.
+- Record fees, interest, and penalties separately when supported.
 
-Tagihan belum dibayar adalah kewajiban, bukan pengeluaran aktual.
+### Budgets
 
-Pengeluaran dibuat saat:
+Budgets do not change balances. Thresholds must be deterministic and alerts
+must not repeat without clear controls. Periods/timezones must stay consistent.
+Overall and per-category budgets must not double count report values.
 
-- pembayaran benar-benar dilakukan; atau
-- installment/partial payment dicatat.
+### Savings goals
 
-Tagihan mendukung:
-
-- jatuh tempo;
-- pembayaran parsial;
-- status open, paid, overdue, atau cancelled;
-- dompet default;
-- kategori;
-- counterparty atau provider;
-- audit payment.
-
-### Utang dan piutang
-
-Bedakan secara eksplisit:
-
-- `payable`: pengguna berutang kepada pihak lain;
-- `receivable`: pihak lain berutang kepada pengguna.
-
-Dana pinjaman:
-
-- dana pinjaman masuk menambah saldo dompet tetapi bukan income;
-- dana yang dipinjamkan keluar mengurangi saldo tetapi bukan expense;
-- pembayaran pokok utang/piutang bukan expense/income;
-- biaya, bunga, atau penalti harus dicatat terpisah bila fitur tersebut ada.
-
-### Budget
-
-- Budget tidak mengubah saldo.
-- Threshold harus deterministik.
-- Peringatan tidak boleh dikirim berulang tanpa kontrol yang jelas.
-- Periode dan timezone harus konsisten.
-- Budget overall dan per-category tidak boleh saling menciptakan double counting
-  pada laporan.
-
-### Goal
-
-- Goal adalah bucket virtual.
-- Kontribusi goal tidak boleh mengubah saldo dompet kecuali ada transfer nyata.
-- UI dan response harus selalu menjelaskan sifat virtual ini.
+Goals are virtual buckets. Contributions do not change wallet balances unless
+a real transfer is recorded. UI and responses must state this clearly.
 
 ### Safe-to-spend
 
-Safe-to-spend adalah estimasi, bukan fakta absolut.
+Safe-to-spend is an estimate. Implement and test its formula in Python,
+document its components, and expose its assumptions.
 
-Rumus dan komponen harus:
+## Database and Migrations
 
-- terimplementasi di Python;
-- dapat diuji;
-- dijelaskan pada dokumentasi;
-- tidak menyembunyikan asumsi.
+Before changing the schema:
 
----
+1. Study the current schema and migrations in `db.py`.
+2. Ensure valid v1/v2 databases still migrate.
+3. Never drop data-bearing tables or columns without a migration plan.
+4. Keep migrations idempotent and as safe as possible after partial failures.
+5. Use SQLite transactions for multi-step changes.
+6. Update the schema version.
+7. Add or update migration tests.
 
-## Database dan migrasi
+Every schema or semantic change must test a fresh database, an older database,
+preserved old data, correct post-migration balances, foreign keys,
+`PRAGMA integrity_check`, and pre-migration backup creation.
 
-### Aturan schema
+Backup/restore changes must preserve input validation, explicit confirmation,
+post-restore integrity checks, no silent overwrite, and temporary-directory
+tests.
 
-Sebelum mengubah schema:
+## CLI Contract
 
-1. Pelajari schema dan migration saat ini di `db.py`.
-2. Pastikan database v1/v2 yang valid masih dapat dimigrasikan.
-3. Jangan drop tabel atau kolom berisi data tanpa migration plan.
-4. Migration harus idempotent.
-5. Migration harus aman dijalankan ulang setelah kegagalan parsial sejauh
-   memungkinkan.
-6. Gunakan SQLite transaction untuk perubahan multi-step.
-7. Perbarui schema version.
-8. Tambahkan atau perbarui migration test.
+The CLI is the interface between Hermes and business logic.
 
-### Backward compatibility
+- Keep option names stable and consistent.
+- Use JSON for machine-readable output except text reports.
+- Operational errors exit non-zero with actionable, secret-safe messages.
+- Do not print tracebacks for normal input errors.
+- Do not change JSON fields used by the skill without a compatibility plan.
+- Dangerous commands require explicit confirmation.
+- Cron commands are non-interactive.
+- Keep `--help` useful.
+- Document new commands in `cli.py`, `README.md`, and `skill/SKILL.md`.
 
-Setiap perubahan schema atau semantics harus menguji minimal:
-
-- instalasi database baru;
-- migrasi database versi lama;
-- data lama tetap tersedia;
-- saldo setelah migrasi tetap benar;
-- foreign key check;
-- `PRAGMA integrity_check`;
-- backup sebelum migrasi tetap dapat dibuat.
-
-### Restore
-
-Perubahan backup atau restore wajib mempertahankan:
-
-- validasi input;
-- explicit confirmation;
-- integrity check sesudah restore;
-- larangan overwrite diam-diam;
-- test yang memakai direktori sementara.
-
----
-
-## Kontrak CLI
-
-CLI adalah antarmuka antara Hermes dan business logic.
-
-Aturan:
-
-- Option name stabil dan konsisten.
-- Output machine-readable menggunakan JSON bila bukan laporan text.
-- Error operasional keluar dengan non-zero exit code.
-- Error message harus actionable dan tidak membocorkan secret.
-- Jangan mencetak traceback untuk error input normal.
-- Jangan mengubah field JSON yang sudah dipakai skill tanpa compatibility plan.
-- Command yang berbahaya harus memerlukan konfirmasi eksplisit.
-- Command cron harus non-interaktif.
-- `--help` wajib tetap berguna.
-- Tambahkan command baru di `cli.py` dan dokumentasikan di `README.md` serta
-  `skill/SKILL.md`.
-
-Entrypoint utama:
+Entry points:
 
 ```bash
 python3 finance.py
-```
-
-Runtime terpasang:
-
-```bash
 python3 ~/.hermes/finance/finance.py
 ```
 
----
+## Hermes Skill
 
-## Hermes skill
+`skill/SKILL.md` must explain when to use the skill, provide deterministic
+procedures, require questions for missing material data, forbid invented
+results, use correct CLI commands, preserve raw user input where appropriate,
+require preview/confirmation for OCR/import/reconciliation, distinguish bills,
+debts, receivables, transfers, income, and expenses, keep Telegram responses
+short, and contain no secrets or personal data.
 
-`skill/SKILL.md` harus:
+Audit every skill example after changing CLI commands. Personality and jokes
+must never replace validation, amounts, errors, or confirmation.
 
-- menjelaskan kapan skill digunakan;
-- memberikan prosedur yang deterministik;
-- menyuruh agent bertanya bila data material kurang;
-- melarang agent mengarang hasil;
-- menggunakan command CLI yang benar;
-- menyimpan raw user input bila relevan;
-- meminta preview dan konfirmasi untuk OCR/import/rekonsiliasi;
-- membedakan tagihan, utang, piutang, transfer, pemasukan, dan pengeluaran;
-- menjaga response Telegram ringkas;
-- tidak memuat secret atau data pribadi.
+## OCR and CSV Import
 
-Setelah mengubah command CLI, audit seluruh contoh pada `skill/SKILL.md`.
+Tesseract is optional and core tests must not depend on it. OCR produces only a
+preview and never records a transaction automatically. Confirmation requires
+at least amount, date, wallet, category, and description. Receipt files stay in
+the runtime data directory; use only synthetic receipts in the repository.
 
-Personality tidak boleh mengubah business rules. Candaan Cali tidak boleh
-menggantikan validasi, angka, error, atau konfirmasi.
-
----
-
-## OCR dan import
-
-### OCR
-
-- Tesseract adalah dependency opsional.
-- Core test tidak boleh bergantung pada Tesseract.
-- OCR hanya menghasilkan preview.
-- Jangan mencatat transaksi otomatis dari OCR.
-- Konfirmasi minimal: amount, date, wallet, category, dan description.
-- Simpan file receipt hanya di runtime data directory.
-- Jangan memasukkan receipt asli ke test atau repository.
-
-### Import CSV
-
-Gunakan alur:
+CSV imports follow:
 
 ```text
 preview -> inspect/update rows -> explicit commit
 ```
 
-Syarat:
+Preview must not create transactions. Preserve auditable source/batch data,
+deduplicate with an external ID and/or fingerprint, never silently classify an
+ambiguous row as `Other`, keep commit as idempotent as practical, and test with
+synthetic CSV files in temporary directories.
 
-- file tidak langsung menciptakan transaksi pada preview;
-- source dan batch dapat diaudit;
-- duplicate detection menggunakan external ID dan/atau fingerprint;
-- baris ambigu tidak boleh diam-diam masuk kategori `Lainnya`;
-- commit harus idempotent sejauh mungkin;
-- test menggunakan CSV sintetis di temporary directory.
+## Backup and Offsite Backup
 
----
+Local and offsite backups are separate. Keep local backups, encrypt before
+offsite upload, never store private encryption keys or `rclone` credentials in
+the repository, support offline restore after the archive is available,
+document retention, alert on backup age, and never call a backup safe before an
+integrity check passes.
 
-## Backup dan offsite backup
-
-Backup lokal dan offsite adalah dua hal berbeda.
-
-- Backup lokal tetap diperlukan.
-- Backup offsite harus terenkripsi sebelum upload.
-- Jangan menyimpan private encryption key di repository.
-- Jangan memasukkan credential `rclone`.
-- Restore harus dapat dilakukan tanpa network setelah file backup tersedia.
-- Retention policy harus terdokumentasi.
-- Alert backup harus memperhitungkan backup age.
-- Jangan menyebut backup aman sebelum integrity check berhasil.
-
----
-
-## Coding style
+## Coding Style
 
 ### Python
 
-- Targetkan Python 3.11 dan 3.12.
-- Utamakan standard library.
-- Dependency baru harus benar-benar diperlukan dan dijelaskan.
-- Gunakan type hints untuk public function dan struktur kompleks.
-- Gunakan `pathlib.Path`.
-- Gunakan context manager atau penutupan koneksi yang jelas.
-- Hindari global mutable state.
-- Hindari SQL string interpolation untuk value; gunakan parameter binding.
-- Untuk identifier SQL dinamis, gunakan allowlist eksplisit.
-- Buat function kecil dengan tanggung jawab tunggal.
-- Jangan menambahkan abstraction hanya untuk terlihat rapi.
-- Pertahankan error message yang spesifik.
-- Jangan menonaktifkan foreign key.
-- Jangan gunakan `except Exception` kecuali di boundary yang memang harus
-  mengubah error menjadi output CLI; tetap jangan menelan error diam-diam.
+- Target Python 3.11 and 3.12; prefer the standard library.
+- Add dependencies only when necessary and explain them.
+- Type public functions and complex structures.
+- Use `pathlib.Path`, context managers, and explicit connection cleanup.
+- Avoid mutable global state.
+- Bind SQL values with parameters; allowlist dynamic identifiers.
+- Keep functions small and focused; avoid decorative abstractions.
+- Keep error messages specific and foreign keys enabled.
+- Use `except Exception` only at a boundary that converts errors to CLI output,
+  and never swallow errors silently.
 
 ### Shell
 
-- Gunakan:
+Use:
 
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
 ```
 
-- Quote variable expansion.
-- Hindari command destruktif tanpa guard.
-- Script cron harus non-interaktif.
-- Script installer harus dapat dijalankan ulang.
-- Installer tidak boleh menghapus database aktif.
-- Jaga line ending LF.
+Quote expansions, guard destructive commands, keep cron non-interactive and
+installers idempotent, never delete the active database, and use LF endings.
 
 ### SQL
 
-- Gunakan transaction untuk operasi multi-table.
-- Tambahkan index berdasarkan query yang benar-benar digunakan.
-- Jangan menambahkan index berlebihan.
-- Foreign key dan constraint adalah bagian business rule, bukan dekorasi.
-- Jelaskan perubahan schema yang tidak trivial.
-
----
+Use transactions for multi-table operations. Add indexes only for actual
+queries. Treat foreign keys and constraints as business rules. Explain
+non-trivial schema changes.
 
 ## Testing
 
-### Command wajib
-
-Dari root repository:
+Required commands from the repository root:
 
 ```bash
 python3 -m compileall -q cali_finance finance.py
@@ -558,7 +384,7 @@ python3 tests/migration_test.py
 python3 tests/restore_test.py
 ```
 
-Hasil yang diharapkan:
+Expected markers:
 
 ```text
 SMOKE_OK
@@ -566,44 +392,16 @@ MIGRATION_OK
 RESTORE_OK
 ```
 
-### Isolasi test
+Every test uses a temporary `HERMES_HOME` and must not read the real
+`~/.hermes`, change user data, use credentials/internet/Telegram/Azure, send
+data externally, or depend on test order.
 
-Semua test harus menggunakan temporary `HERMES_HOME`.
+Add tests when changing amount parsing, balances, duplicate detection, reports,
+budgets, obligations, recurring rules, safe-to-spend, imports, receipts,
+backup/restore, migrations, or CLI output contracts. Add a regression test for
+bug fixes when practical.
 
-Test tidak boleh:
-
-- membaca `~/.hermes` asli;
-- mengubah database pengguna;
-- menggunakan credential;
-- memerlukan internet;
-- menghubungi Telegram;
-- mengakses Azure;
-- mengirim data keluar;
-- bergantung pada urutan eksekusi test lain.
-
-### Test baru
-
-Tambahkan test ketika mengubah:
-
-- parsing uang;
-- saldo;
-- duplicate detection;
-- laporan;
-- budget;
-- tagihan/utang/piutang;
-- recurring obligations;
-- safe-to-spend;
-- import;
-- receipt confirmation;
-- backup/restore;
-- migration;
-- CLI output contract.
-
-Bug fix harus memiliki regression test bila memungkinkan.
-
-### Sebelum menyelesaikan tugas
-
-Jalankan:
+Before finishing, run:
 
 ```bash
 git status --short
@@ -611,49 +409,19 @@ git diff --check
 git diff --stat
 ```
 
-Lalu periksa diff aktual.
+Then inspect the actual diff.
 
----
+## Documentation
 
-## Dokumentasi
+Behavior changes update relevant files: `README.md`, `skill/SKILL.md`,
+`CHANGELOG.md`, `SECURITY.md`, `.env.example`, cron scripts, and sanitized
+examples. Do not document untested commands or include server IPs, personal
+usernames/paths, credentials, real amounts/transactions, or private screenshots.
+Use placeholders such as `USER_VM`, `PUBLIC_IP`, `USERNAME`, and `KEY_NAME.pem`.
 
-Perubahan behavior wajib memperbarui dokumentasi yang relevan:
+## Git Workflow
 
-- `README.md`: instalasi, penggunaan, command, limitation.
-- `skill/SKILL.md`: instruksi Hermes.
-- `CHANGELOG.md`: perubahan user-facing.
-- `SECURITY.md`: bila ada perubahan threat model.
-- `.env.example`: bila ada konfigurasi baru.
-- script cron: bila command berubah.
-- contoh sanitized: bila menambah workflow baru.
-
-Jangan mendokumentasikan command yang belum diuji.
-
-Jangan menyertakan:
-
-- IP server;
-- username pribadi;
-- token;
-- path lokal spesifik pengguna;
-- nominal atau transaksi asli;
-- screenshot dengan data pribadi.
-
-Gunakan placeholder:
-
-```text
-USER_VM
-PUBLIC_IP
-USERNAME
-NAMA_KEY.pem
-```
-
----
-
-## Git workflow
-
-### Sebelum mulai
-
-Periksa:
+Before work:
 
 ```bash
 git status --short
@@ -661,28 +429,13 @@ git branch --show-current
 git remote -v
 ```
 
-Jangan menimpa perubahan pengguna yang belum di-commit.
+Preserve uncommitted user changes. Avoid editing unrelated dirty files.
 
-Jika working tree memiliki perubahan yang tidak terkait, pertahankan dan hindari
-mengedit file tersebut kecuali diperlukan.
+For non-trivial work, suggest `feat/<name>`, `fix/<name>`, `docs/<name>`, or
+`chore/<name>`. Do not create a branch for a small requested change on the
+active branch unless risk is high.
 
-### Branch
-
-Untuk pekerjaan non-trivial, sarankan branch:
-
-```text
-feat/<nama-fitur>
-fix/<nama-bug>
-docs/<nama-perubahan>
-chore/<nama-tugas>
-```
-
-Jangan membuat branch bila pengguna meminta perubahan kecil langsung di branch
-aktif, kecuali ada risiko tinggi.
-
-### Commit
-
-Gunakan Conventional Commits:
+Use Conventional Commits, for example:
 
 ```text
 feat: add debt repayment tracking
@@ -693,201 +446,100 @@ refactor: isolate report aggregation
 chore: configure GitHub Actions
 ```
 
-Commit harus:
+Commits must be focused, secret-free, runtime-data-free, tested, and must not
+mix mass formatting with behavior changes without a reason. Do not commit
+unless asked or clearly required by the task.
 
-- fokus pada satu tujuan;
-- tidak memuat secret;
-- tidak memuat runtime data;
-- memiliki test yang relevan;
-- tidak menggabungkan formatting massal dengan behavior change tanpa alasan.
-
-Jangan membuat commit kecuali diminta atau jelas menjadi bagian tugas pengguna.
-
-### Sebelum push
-
-Jalankan:
+Before pushing, inspect staged state and scan for secrets/sensitive files:
 
 ```bash
 git status
 git diff --cached --check
 git diff --cached --stat
 git diff --cached
-```
 
-Lakukan secret scan lokal:
-
-```bash
 grep -RInE \
   'AIza|GEMINI_API_KEY|GOOGLE_API_KEY|TELEGRAM.*TOKEN|ghp_|github_pat_|BEGIN .*PRIVATE KEY|ACCOUNT_KEY|SAS_TOKEN' \
-  . \
-  --exclude-dir=.git
-```
+  . --exclude-dir=.git
 
-Cari file sensitif:
-
-```bash
 find . -type f \( \
-  -name '*.db' -o \
-  -name '*.sqlite*' -o \
-  -name '.env' -o \
-  -name '*.pem' -o \
-  -name '*.key' -o \
-  -name 'rclone.conf' \
+  -name '*.db' -o -name '*.sqlite*' -o -name '.env' -o \
+  -name '*.pem' -o -name '*.key' -o -name 'rclone.conf' \
 \)
 ```
 
-Nilai placeholder pada dokumentasi boleh muncul. Nilai credential asli tidak
-boleh muncul.
+Documentation placeholders are allowed; real credentials are not.
 
----
+## GitHub Setup and Publication
 
-## GitHub repository setup
+When missing, Codex may help create `.gitignore`, `.gitattributes`,
+`.env.example`, `SECURITY.md`, `.github/workflows/test.yml`, and
+`examples/SOUL.example.md`.
 
-Bila file berikut belum ada, Codex boleh membantu membuatnya:
+`.gitignore` must cover Python caches/virtualenvs, real `.env` files, databases
+and WAL/SHM, backups, receipts, real imports/exports, credentials, private
+keys, release archives, and editor metadata. Sanitized examples/docs may be
+tracked.
 
-- `.gitignore`;
-- `.gitattributes`;
-- `.env.example`;
-- `SECURITY.md`;
-- `.github/workflows/test.yml`;
-- `examples/SOUL.example.md`.
+CI runs on push and pull requests with Python 3.11/3.12, compileall, smoke,
+migration, and restore tests, `contents: read`, no secrets, and no real data.
 
-### `.gitignore`
+Recommend a private repository initially. Do not make it public until the user
+reviews the license, README, security policy, full history, secret scans,
+example data, attribution, and issue-readiness.
 
-Minimal harus mengabaikan:
+Publication checklist:
 
-- Python cache dan virtualenv;
-- `.env` asli;
-- database dan WAL/SHM;
-- backup;
-- receipt;
-- import/export asli;
-- credential;
-- private key;
-- release archive;
-- editor metadata.
+- [ ] Root `AGENTS.md` exists.
+- [ ] README covers purpose, features, install, upgrade, and limits.
+- [ ] LICENSE owner is correct and SECURITY.md exists.
+- [ ] `.gitignore` and `.env.example` are safe.
+- [ ] `examples/SOUL.example.md` is sanitized.
+- [ ] All tests pass.
+- [ ] No databases, receipts, statements, or credentials exist in the tree or
+      history.
+- [ ] GitHub Actions passes and default branch is `main`.
+- [ ] Secret scanning/push protection is enabled when available.
+- [ ] Repository remains private until public audit completes.
+- [ ] Upgrade instructions and migration/breaking-change release notes exist.
+- [ ] Directly distributed release archives have checksums.
 
-Contoh sanitized di `examples/` dan dokumentasi di `docs/` boleh dilacak.
+## Releases and Versioning
 
-### GitHub Actions
+Use Semantic Versioning. PATCH is a backward-compatible fix, MINOR is a
+backward-compatible feature, and MAJOR is a breaking or materially different
+migration. The version source is `cali_finance/__init__.py`.
 
-CI minimal harus:
+For a release: require a clean tree, choose the next version, update
+`__init__.py` and `CHANGELOG.md`, update README if needed, run all available
+tests and `git diff --check`, create a release commit and annotated tag, then
+push only with user approval. GitHub release notes include changes, migrations,
+upgrade steps, and known limitations. Archives get SHA-256 checksums and never
+contain runtime data, receipts, configuration, or secrets.
 
-- berjalan pada push dan pull request;
-- menggunakan Python 3.11 dan 3.12;
-- menjalankan compileall;
-- menjalankan smoke, migration, dan restore test;
-- hanya memiliki permission `contents: read`;
-- tidak membutuhkan repository secret;
-- tidak menggunakan data nyata.
-
-### Repository visibility
-
-Rekomendasikan repository **private** pada awal publikasi.
-
-Jangan mengubah menjadi public sampai pengguna memeriksa:
-
-- license;
-- README;
-- security policy;
-- seluruh git history;
-- secret scanning;
-- contoh data;
-- attribution;
-- kesiapan menerima issue dari publik.
-
----
-
-## Release dan versioning
-
-Gunakan Semantic Versioning:
-
-```text
-MAJOR.MINOR.PATCH
-```
-
-- `PATCH`: bug fix backward-compatible.
-- `MINOR`: fitur backward-compatible.
-- `MAJOR`: breaking change atau migration yang mengubah kontrak secara material.
-
-Version source berada di:
-
-```text
-cali_finance/__init__.py
-```
-
-Saat menyiapkan release:
-
-1. Pastikan working tree bersih.
-2. Tentukan versi berikutnya.
-3. Perbarui `cali_finance/__init__.py`.
-4. Perbarui `CHANGELOG.md`.
-5. Perbarui README jika perlu.
-6. Jalankan seluruh test pada Python yang tersedia.
-7. Jalankan `git diff --check`.
-8. Buat commit release.
-9. Buat annotated tag `vX.Y.Z`.
-10. Push commit dan tag hanya setelah persetujuan pengguna.
-11. Buat GitHub Release dari tag.
-12. Sertakan ringkasan perubahan, migration note, upgrade steps, dan known
-    limitations.
-13. Bila membuat archive, hasilkan SHA-256 checksum.
-14. Jangan menyertakan database, config runtime, receipt, atau secret.
-
-Contoh tag:
+Example only; never run without explicit instructions:
 
 ```bash
 git tag -a v2.1.0 -m "Cali Finance v2.1.0"
 ```
 
-Jangan menjalankan command tersebut tanpa instruksi eksplisit pengguna.
+## Azure Deployment
 
----
-
-## Checklist publikasi GitHub
-
-Sebelum publikasi, verifikasi:
-
-- [ ] `AGENTS.md` tersedia di root.
-- [ ] `README.md` menjelaskan tujuan, fitur, instalasi, upgrade, dan batasan.
-- [ ] `LICENSE` memakai nama pemilik yang benar.
-- [ ] `SECURITY.md` tersedia.
-- [ ] `.gitignore` mencakup runtime data dan secrets.
-- [ ] `.env.example` tidak berisi nilai secret.
-- [ ] `examples/SOUL.example.md` sudah disanitasi.
-- [ ] Seluruh test lulus.
-- [ ] Tidak ada database di working tree atau history.
-- [ ] Tidak ada receipt/mutasi asli.
-- [ ] Tidak ada credential.
-- [ ] GitHub Actions berhasil.
-- [ ] Default branch adalah `main`.
-- [ ] Secret scanning dan push protection diaktifkan bila tersedia.
-- [ ] Repository masih private bila audit publik belum selesai.
-- [ ] Upgrade instructions dari versi sebelumnya tersedia.
-- [ ] Release note menjelaskan migration dan breaking changes.
-- [ ] Archive release memiliki checksum bila didistribusikan langsung.
-
----
-
-## Deployment ke Azure
-
-Deployment adalah langkah terpisah dari publish GitHub.
-
-Alur yang diharapkan:
+Deployment is separate from GitHub publication:
 
 ```text
-ubah source lokal
--> jalankan test
+change local source
+-> run tests
 -> commit
--> push ke GitHub
--> pull di Azure
--> hentikan gateway
--> jalankan install.sh
--> hidupkan gateway
+-> push to GitHub
+-> pull on Azure
+-> stop gateway
+-> run install.sh
+-> start gateway
 -> health check
 ```
 
-Command deployment contoh hanya boleh dijalankan setelah pengguna meminta:
+Run deployment commands only when explicitly requested:
 
 ```bash
 hermes gateway stop
@@ -897,124 +549,52 @@ hermes gateway status
 python3 ~/.hermes/finance/finance.py health
 ```
 
-Installer harus:
+The installer must create a pre-upgrade backup, preserve the old database,
+migrate the schema, install source/skill/scripts, preserve `SOUL.md`, and never
+delete user data. Suggest `/reset` in Telegram after deploying skill changes.
 
-- membuat pre-upgrade backup;
-- menjaga database lama;
-- memigrasikan schema;
-- memasang source, skill, dan script;
-- tidak menimpa `SOUL.md`;
-- tidak menghapus data pengguna.
+## Workflow for Every Task
 
-Setelah deployment, sarankan pengguna menjalankan `/reset` di Telegram bila
-`SKILL.md` berubah.
+1. Understand whether the request touches money, schema, backup, security, or
+   release. Read the repository before asking answerable questions.
+2. Inspect relevant files and Git state; never guess existing structure/APIs.
+3. For non-trivial changes, state a short plan, files, tests, and
+   migration/security risks.
+4. Implement the minimum change, preserve APIs, avoid broad refactors and
+   unnecessary dependencies.
+5. Run the most specific test first, then the full suite.
+6. Review the diff for leaks, command/schema/output mistakes, migration risks,
+   documentation typos, line endings, executable bits, untracked files, and
+   runtime data.
+7. Report changes, tests, remaining risks, and next steps.
 
----
-
-## Workflow Codex untuk setiap tugas
-
-Ikuti urutan berikut:
-
-### 1. Pahami permintaan
-
-- Identifikasi apakah tugas menyentuh uang, schema, backup, security, atau release.
-- Cari requirement ambigu yang dapat mengubah hasil secara material.
-- Jangan bertanya bila jawabannya dapat diperoleh dengan membaca repository.
-
-### 2. Inspeksi repository
-
-Baca file yang relevan dan periksa git state.
-
-Jangan menebak struktur atau API yang sudah ada.
-
-### 3. Buat rencana kecil
-
-Untuk perubahan non-trivial, jelaskan secara singkat:
-
-- file yang akan disentuh;
-- behavior yang berubah;
-- test yang akan ditambahkan;
-- risiko migration/security.
-
-### 4. Implementasi minimal
-
-- Ubah hanya file yang diperlukan.
-- Pertahankan API lama bila memungkinkan.
-- Jangan melakukan refactor luas tanpa alasan.
-- Jangan menambahkan dependency untuk masalah yang dapat diselesaikan dengan
-  standard library secara jelas.
-
-### 5. Test
-
-Jalankan test paling spesifik terlebih dahulu, kemudian seluruh suite.
-
-### 6. Review diff
-
-Periksa:
-
-- data leak;
-- command yang salah;
-- migration risk;
-- output contract;
-- typo dokumentasi;
-- line ending;
-- executable bit pada shell script;
-- file baru yang belum dilacak;
-- file runtime yang ikut masuk.
-
-### 7. Laporkan hasil
-
-Format akhir yang diharapkan:
+Preferred final format:
 
 ```text
-Perubahan:
+Changes:
 - ...
 
-Test:
-- `command` — lulus
-- `command` — lulus
+Tests:
+- `command` — passed
 
-Catatan/Risiko:
+Notes/Risks:
 - ...
 
-Langkah berikutnya:
+Next step:
 - ...
 ```
 
-Jangan mengatakan “selesai” bila masih ada test gagal atau requirement belum
-terpenuhi.
+Do not say the task is complete while tests fail or requirements remain open.
 
----
+## Definition of Done
 
-## Definition of done
+The requested behavior works; business rules live in Python; relevant tests
+exist and pass; migrations are safe; docs and the Hermes skill agree; no real
+data/secrets are present; `git diff --check` is clean; installer/cron still
+work; Hermes can consume CLI output; remaining risks are explicit; and
+publication/deployment happens only with explicit approval.
 
-Sebuah tugas dianggap selesai bila:
-
-- behavior sesuai permintaan;
-- business rule berada di Python, bukan hanya prompt;
-- test relevan tersedia dan lulus;
-- migration aman bila schema berubah;
-- dokumentasi dan Hermes skill sinkron;
-- tidak ada secret atau data nyata;
-- `git diff --check` bersih;
-- perubahan tidak merusak installer atau cron;
-- output CLI tetap dapat digunakan Hermes;
-- risiko yang belum selesai dijelaskan;
-- publish/deploy hanya dilakukan setelah persetujuan eksplisit pengguna.
-
----
-
-## Instruksi terakhir
-
-Bertindak sebagai maintainer yang konservatif terhadap data keuangan.
-
-Lebih baik:
-
-- menolak input ambigu;
-- meminta konfirmasi;
-- menambahkan regression test;
-- mempertahankan histori;
-- memberi tahu risiko secara jujur;
-
-daripada menghasilkan fitur cepat yang dapat merusak saldo, transaksi, backup,
-atau privasi pengguna.
+Act as a conservative financial-data maintainer. Prefer rejecting ambiguous
+input, requesting confirmation, adding regression coverage, preserving history,
+and stating risks over shipping a fast change that can damage balances,
+transactions, backups, or privacy.
