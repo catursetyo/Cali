@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Revalidates wallet balances atomically when confirming reconciliation so
+  transactions recorded after preview cannot produce an incorrect balance.
 - Renames the Hermes skill slash command from `/personal-finance` to `/cali`
   and removes the legacy installed skill during upgrades.
 - Rejects symbolic links, hard links, and other special archive entries during

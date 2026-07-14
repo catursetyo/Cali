@@ -739,8 +739,9 @@ def reconcile_adjust(
     confirm_adjust: str,
 ) -> dict[str, Any]:
     if confirm_adjust != "YES":
-        raise ValueError("Penyesuaian memerlukan --confirm-adjust YES.")
+        raise ValueError("Adjustment requires --confirm-adjust YES.")
     conn = connect()
+    conn.execute("BEGIN IMMEDIATE")
     check = conn.execute(
         """
         SELECT bc.*,w.name AS wallet_name
@@ -755,10 +756,23 @@ def reconcile_adjust(
     if check["status"] != "pending":
         conn.close()
         raise ValueError("This balance check has already been closed.")
-    difference = check["difference"]
+    current_balance = wallet_balance(conn, check["wallet_id"])
+    difference = check["actual_balance"] - current_balance
+    revalidation_note = ""
+    if current_balance != check["recorded_balance"]:
+        revalidation_note = (
+            f" | Revalidated: recorded {check['recorded_balance']} -> {current_balance}, "
+            f"difference {check['difference']} -> {difference}"
+        )
     if difference == 0:
         conn.execute(
-            "UPDATE balance_checks SET status='closed' WHERE id=?", (check_id,)
+            """
+            UPDATE balance_checks
+            SET recorded_balance=?,difference=?,status='closed',
+                note=COALESCE(note,'') || ?
+            WHERE id=?
+            """,
+            (current_balance, difference, revalidation_note, check_id),
         )
         conn.commit()
         conn.close()
@@ -780,13 +794,20 @@ def reconcile_adjust(
     conn.execute(
         """
         UPDATE balance_checks
-        SET status='adjusted',adjustment_transaction_id=?,note=COALESCE(note,'') || ?
+        SET recorded_balance=?,difference=?,status='adjusted',
+            adjustment_transaction_id=?,note=COALESCE(note,'') || ?
         WHERE id=?
         """,
-        (tx_id, f" | Adjustment: {reason.strip()}", check_id),
+        (
+            current_balance,
+            difference,
+            tx_id,
+            revalidation_note + f" | Adjustment: {reason.strip()}",
+            check_id,
+        ),
     )
-    conn.commit()
     new_balance = wallet_balance(conn, check["wallet_id"])
+    conn.commit()
     conn.close()
     return {
         "ok": True,

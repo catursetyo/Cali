@@ -154,8 +154,18 @@ def main() -> None:
     assert report["current"]["expense_total"] >= 335000
     assert "category_changes" in report["comparison"]
 
-    check = reconcile_preview("Cash", "300000")
-    reconcile_adjust(check["check_id"], "Test difference", "YES")
+    wallet_add("Reconciliation", "cash", "100000", None)
+    check = reconcile_preview("Reconciliation", "120000")
+    add_transaction(
+        tx_type="expense",
+        amount_raw="10000",
+        wallet_name="Reconciliation",
+        description="Expense recorded after reconciliation preview",
+        category_name="Food",
+    )
+    adjustment = reconcile_adjust(check["check_id"], "Test difference", "YES")
+    assert adjustment["adjustment"] == 30000
+    assert adjustment["new_balance"] == 120000
 
     csv_path = ROOT / "bank.csv"
     csv_path.write_text(
