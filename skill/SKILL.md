@@ -2,7 +2,7 @@
 name: personal-finance
 description: Record, audit, and summarize personal finances with wallets, budgets, bills, debts, receivables, savings goals, CSV files, and receipts.
 version: 1.0.0
-author: Cali Finance Project
+author: Cali Project
 license: MIT
 platforms: [linux]
 metadata:

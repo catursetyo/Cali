@@ -56,7 +56,7 @@ python3 "$FINANCE_DIR/finance.py" health
 
 cat <<EOF
 
-Cali Finance installed.
+Cali installed.
 
 App       : $FINANCE_DIR/finance.py
 Database  : $FINANCE_DIR/finance.db

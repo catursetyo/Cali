@@ -84,7 +84,7 @@ def dashboard_generate(
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cali Finance Dashboard</title>
+<title>Cali Dashboard</title>
 <style>
 :root {{ color-scheme: dark; --bg:#0d1117; --panel:#161b22; --border:#30363d; --text:#e6edf3; --muted:#8b949e; --accent:#7ee787; --warn:#d29922; --danger:#f85149; }}
 * {{ box-sizing:border-box; }} body {{ margin:0; font-family:Inter,ui-sans-serif,system-ui,sans-serif; background:var(--bg); color:var(--text); }}
@@ -100,7 +100,7 @@ footer {{ color:var(--muted);font-size:12px;margin-top:20px; }} @media(max-width
 </style>
 </head>
 <body><main>
-<p class="muted">Cali Finance • {html.escape(data["label"])}</p>
+<p class="muted">Cali • {html.escape(data["label"])}</p>
 <h1>Your finances, without the unnecessary drama.</h1>
 <p class="muted">Generated {html.escape(generated)}. This static dashboard reads only the local database.</p>
 <section class="grid metrics">

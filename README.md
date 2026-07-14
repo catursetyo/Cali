@@ -1,6 +1,6 @@
-# Cali Finance for Hermes Agent
+# Cali
 
-Cali Finance is a local personal finance ledger for Hermes Agent. The AI model
+Cali is a local personal finance ledger for Hermes Agent. The AI model
 understands natural language and selects commands, while Python and SQLite
 handle validation, balances, reports, duplicate detection, and history.
 
@@ -46,8 +46,8 @@ receipts, transaction exports, `.env` files, or credentials in this repository.
 1. Clone the repository and enter the project directory.
 
    ```bash
-   git clone REPOSITORY_URL cali-finance
-   cd cali-finance
+   git clone https://github.com/catursetyo/Cali.git
+   cd Cali
    ```
 
 2. Check the Python version.
@@ -96,8 +96,8 @@ Use synthetic data while testing the repository. Commands without a custom
 1. Upload or clone the source on the Hermes host and enter the project folder.
 
    ```bash
-   unzip cali-finance.zip
-   cd cali-finance
+   unzip Cali.zip
+   cd Cali
    ```
 
 2. Stop the gateway so no transaction arrives during installation.
@@ -283,7 +283,7 @@ External IDs and fingerprints prevent duplicate imports.
 Install the optional dependency:
 
 ```bash
-cd ~/cali-finance
+cd ~/Cali
 ./install-ocr.sh
 ```
 
@@ -330,7 +330,7 @@ scripts to `~/.hermes/scripts/`.
 # Daily alerts at 08:00
 hermes cron create "0 8 * * *" --no-agent \
   --script finance-daily-alerts.sh --deliver telegram \
-  --name "Cali finance alerts"
+  --name "Cali alerts"
 
 # Weekly report on Sunday at 20:00
 hermes cron create "0 20 * * 0" --no-agent \
@@ -376,7 +376,7 @@ another storage provider:
 
 ```bash
 cat >> ~/.hermes/.env <<'EOF'
-FINANCE_RCLONE_REMOTE=mycrypt:cali-finance
+FINANCE_RCLONE_REMOTE=mycrypt:Cali
 FINANCE_BACKUP_AGE_RECIPIENT=age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 EOF
 ```

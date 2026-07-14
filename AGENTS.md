@@ -3,7 +3,7 @@
 ## Purpose
 
 This is the primary instruction file for Codex when developing, testing,
-documenting, and publishing **Cali Finance for Hermes Agent**. Keep it in the
+documenting, and publishing **Cali**. Keep it in the
 repository root beside `README.md`, `finance.py`, and `cali_finance/`.
 
 If more `AGENTS.md` files are added later, the instructions nearest to the file
@@ -11,7 +11,7 @@ being changed take precedence.
 
 ## Project Summary
 
-Cali Finance is a local personal finance ledger for Hermes Agent.
+Cali is a local personal finance ledger for Hermes Agent.
 
 - The AI model understands natural language and selects commands.
 - Python validates input and enforces business rules.
@@ -520,7 +520,7 @@ contain runtime data, receipts, configuration, or secrets.
 Example only; never run without explicit instructions:
 
 ```bash
-git tag -a v2.1.0 -m "Cali Finance v2.1.0"
+git tag -a v2.1.0 -m "Cali v2.1.0"
 ```
 
 ## Azure Deployment

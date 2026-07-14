@@ -83,7 +83,7 @@ def _health(_args):
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="finance.py",
-        description="Cali Finance — local-first personal finance ledger for Hermes Agent.",
+        description="Cali — local-first personal finance ledger for Hermes Agent.",
     )
     parser.add_argument("--pretty", action="store_true", help="Pretty-print JSON output.")
     parser.add_argument("--version", action="version", version=__version__)
