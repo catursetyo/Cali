@@ -195,58 +195,60 @@ def receipt_confirm(
     force_duplicate: bool = False,
 ) -> dict[str, Any]:
     conn = connect()
-    receipt = conn.execute("SELECT * FROM receipts WHERE id=?", (receipt_id,)).fetchone()
-    if not receipt:
-        conn.close()
-        raise ValueError(f"Receipt #{receipt_id} not found.")
-    if receipt["status"] != "preview":
-        conn.close()
-        raise ValueError("This receipt has already been committed or rejected.")
-    amount = amount_raw if amount_raw is not None else receipt["total_amount"]
-    if amount is None:
-        conn.close()
-        raise ValueError("Amount could not be read. Specify --amount.")
-    occurred = date_raw or receipt["occurred_at"]
-    conn.close()
+    conn.execute("BEGIN IMMEDIATE")
+    try:
+        receipt = conn.execute("SELECT * FROM receipts WHERE id=?", (receipt_id,)).fetchone()
+        if not receipt:
+            raise ValueError(f"Receipt #{receipt_id} not found.")
+        if receipt["status"] != "preview":
+            raise ValueError("This receipt has already been committed or rejected.")
+        amount = amount_raw if amount_raw is not None else receipt["total_amount"]
+        if amount is None:
+            raise ValueError("Amount could not be read. Specify --amount.")
 
-    result = add_transaction(
-        tx_type="expense",
-        amount_raw=amount,
-        wallet_name=wallet_name,
-        description=description,
-        category_name=category_name,
-        date_raw=occurred,
-        note=f"Receipt #{receipt_id}; merchant={merchant or receipt['merchant'] or '-'}",
-        source="receipt",
-        force_duplicate=force_duplicate,
-        receipt_id=receipt_id,
-    )
-    if not result["ok"]:
+        result = add_transaction(
+            tx_type="expense",
+            amount_raw=amount,
+            wallet_name=wallet_name,
+            description=description,
+            category_name=category_name,
+            date_raw=date_raw or receipt["occurred_at"],
+            note=f"Receipt #{receipt_id}; merchant={merchant or receipt['merchant'] or '-'}",
+            source="receipt",
+            force_duplicate=force_duplicate,
+            receipt_id=receipt_id,
+            _conn=conn,
+        )
+        if not result["ok"]:
+            conn.rollback()
+            return result
+        conn.execute(
+            """
+            UPDATE receipts
+            SET status='committed',transaction_id=?,merchant=COALESCE(?,merchant),
+                total_amount=?,occurred_at=?,
+                category_id=(SELECT id FROM categories WHERE name=? COLLATE NOCASE),
+                wallet_id=(SELECT id FROM wallets WHERE name=? COLLATE NOCASE)
+            WHERE id=?
+            """,
+            (
+                result["transaction_id"],
+                merchant,
+                result["amount"],
+                result["occurred_at"],
+                result["category"],
+                result["wallet"],
+                receipt_id,
+            ),
+        )
+        conn.commit()
+        result["receipt_id"] = receipt_id
         return result
-    update = connect()
-    update.execute(
-        """
-        UPDATE receipts
-        SET status='committed',transaction_id=?,merchant=COALESCE(?,merchant),
-            total_amount=?,occurred_at=?,
-            category_id=(SELECT id FROM categories WHERE name=? COLLATE NOCASE),
-            wallet_id=(SELECT id FROM wallets WHERE name=? COLLATE NOCASE)
-        WHERE id=?
-        """,
-        (
-            result["transaction_id"],
-            merchant,
-            result["amount"],
-            result["occurred_at"],
-            result["category"],
-            result["wallet"],
-            receipt_id,
-        ),
-    )
-    update.commit()
-    update.close()
-    result["receipt_id"] = receipt_id
-    return result
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
 def receipt_reject(receipt_id: int, reason: str) -> dict[str, Any]:

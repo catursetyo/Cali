@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sqlite3
 from datetime import date, datetime, time, timedelta
 from typing import Any
 
@@ -122,9 +123,11 @@ def budget_status(
     anchor_date: str | None = None,
     period_type: str | None = None,
     category_name: str | None = None,
+    _conn: sqlite3.Connection | None = None,
 ) -> list[dict[str, Any]]:
     anchor = date.fromisoformat(anchor_date) if anchor_date else datetime.now(TZ).date()
-    conn = connect()
+    owns_connection = _conn is None
+    conn = _conn or connect()
     conditions = ["b.active=1", "b.start_date<=?", "b.end_date>?"]
     params: list[Any] = [anchor.isoformat(), anchor.isoformat()]
     if period_type:
@@ -175,7 +178,8 @@ def budget_status(
                 "over_budget": remaining < 0,
             }
         )
-    conn.close()
+    if owns_connection:
+        conn.close()
     return result
 
 

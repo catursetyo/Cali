@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import calendar
+import sqlite3
 from datetime import date, datetime, timedelta
 from typing import Any
 
@@ -36,6 +37,36 @@ def refresh_obligation_statuses(conn=None) -> int:
         conn.commit()
         conn.close()
     return changed
+
+
+def _restore_voided_payment(conn: sqlite3.Connection, transaction_id: int) -> None:
+    row = conn.execute(
+        """
+        SELECT o.id,o.original_amount,o.remaining_amount,o.due_date,o.status,
+               p.amount
+        FROM obligation_payments p
+        JOIN obligations o ON o.id=p.obligation_id
+        WHERE p.transaction_id=?
+        """,
+        (transaction_id,),
+    ).fetchone()
+    if not row:
+        return
+    remaining = min(row["original_amount"], row["remaining_amount"] + row["amount"])
+    if row["status"] == "cancelled":
+        conn.execute(
+            "UPDATE obligations SET remaining_amount=? WHERE id=?",
+            (remaining, row["id"]),
+        )
+        return
+    conn.execute(
+        "UPDATE obligations SET remaining_amount=?,status=?,closed_at=NULL WHERE id=?",
+        (
+            remaining,
+            _status_for(remaining, row["original_amount"], row["due_date"]),
+            row["id"],
+        ),
+    )
 
 
 def obligation_add(

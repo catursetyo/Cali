@@ -335,17 +335,20 @@ def add_transaction(
     external_id: str | None = None,
     import_batch_id: int | None = None,
     receipt_id: int | None = None,
+    _conn: sqlite3.Connection | None = None,
 ) -> dict[str, Any]:
     if tx_type not in {"expense", "income"}:
         raise ValueError("Use add only for expense or income transactions.")
-    conn = connect()
+    owns_connection = _conn is None
+    conn = _conn or connect()
     wallet = resolve_wallet(conn, wallet_name)
     if category_name:
         category = resolve_category(conn, category_name, tx_type)
     else:
         category = infer_category(conn, description, tx_type)
         if not category:
-            conn.close()
+            if owns_connection:
+                conn.close()
             raise ValueError(
                 "Category is unclear. Specify a category before recording the transaction."
             )
@@ -362,7 +365,8 @@ def add_transaction(
         description=description,
     )
     if duplicates and not force_duplicate:
-        conn.close()
+        if owns_connection:
+            conn.close()
         return {
             "ok": False,
             "code": "possible_duplicate",
@@ -385,15 +389,17 @@ def add_transaction(
         import_batch_id=import_batch_id,
         receipt_id=receipt_id,
     )
-    conn.commit()
+    if owns_connection:
+        conn.commit()
     balance = wallet_balance(conn, wallet["id"])
-    conn.close()
     from .budgets import budget_status
     active_budgets = [
-        item for item in budget_status(anchor_date=occurred_at[:10])
+        item for item in budget_status(anchor_date=occurred_at[:10], _conn=conn)
         if item["category"] in {category["name"], "All categories"}
     ] if tx_type == "expense" else []
     warnings = [item for item in active_budgets if item["threshold"]]
+    if owns_connection:
+        conn.close()
     return {
         "ok": True,
         "transaction_id": tx_id,
@@ -678,23 +684,29 @@ def search_transactions(
 
 def void_transaction(transaction_id: int, reason: str) -> dict[str, Any]:
     conn = connect()
-    row = conn.execute(
-        "SELECT id,status FROM transactions WHERE id=?", (transaction_id,)
-    ).fetchone()
-    if not row:
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT id,status FROM transactions WHERE id=?", (transaction_id,)
+        ).fetchone()
+        if not row:
+            raise ValueError(f"Transaction #{transaction_id} not found.")
+        if row["status"] == "void":
+            raise ValueError(f"Transaction #{transaction_id} has already been voided.")
+        now = datetime.now(TZ).isoformat(timespec="seconds")
+        conn.execute(
+            "UPDATE transactions SET status='void',voided_at=?,void_reason=? WHERE id=?",
+            (now, reason.strip(), transaction_id),
+        )
+        from .obligations import _restore_voided_payment
+        _restore_voided_payment(conn, transaction_id)
+        conn.commit()
+        return {"ok": True, "transaction_id": transaction_id, "status": "void"}
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
         conn.close()
-        raise ValueError(f"Transaction #{transaction_id} not found.")
-    if row["status"] == "void":
-        conn.close()
-        raise ValueError(f"Transaction #{transaction_id} has already been voided.")
-    now = datetime.now(TZ).isoformat(timespec="seconds")
-    conn.execute(
-        "UPDATE transactions SET status='void',voided_at=?,void_reason=? WHERE id=?",
-        (now, reason.strip(), transaction_id),
-    )
-    conn.commit()
-    conn.close()
-    return {"ok": True, "transaction_id": transaction_id, "status": "void"}
 
 
 def reconcile_preview(

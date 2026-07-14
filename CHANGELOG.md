@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Restores an obligation's remaining amount and status when its payment
+  transaction is voided.
+- Commits receipt confirmation and its expense transaction atomically.
 - Revalidates wallet balances atomically when confirming reconciliation so
   transactions recorded after preview cannot produce an incorrect balance.
 - Renames the Hermes skill slash command from `/personal-finance` to `/cali`
